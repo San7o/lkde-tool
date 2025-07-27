@@ -1,0 +1,4 @@
+* Sources
+
+This directory contains various versions of the source code of the
+linux kernel.

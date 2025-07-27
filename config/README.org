@@ -1,0 +1,3 @@
+* Config
+
+This dicrectory contains the kernel config files.
