@@ -15,8 +15,9 @@ IMG_TMP_MOUNT?=${PWD}/mnt/${IMG_NAME}
 IMG_FS?=ext4
 DEBOOTSTRAP_DIR?=/usr/sbin
 QEMU_DIR?=/usr/bin
-QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0"\
-            --enable-kvm
+QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
+            --enable-kvm\
+            -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0
 
 # Internal variables
 ifeq (${ARCH},amd64)
@@ -62,7 +63,7 @@ build: env ${CONFIG_DIR}/${CONFIG_NAME} # Build the kernel
 ${IMG_TMP_MOUNT}:
 	mkdir -p ${IMG_TMP_MOUNT}
 
-.PHONE: image
+.PHONY: image
 image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
 	${QEMU_DIR}/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} 1g
 	mkfs.${IMG_FS} ${INSTALL_DIR}/${IMG_NAME}
@@ -70,7 +71,15 @@ image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
 	sudo ${DEBOOTSTRAP_DIR}/debootstrap --arch ${ARCH} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo 'root:root' | chpasswd"
-	echo "lkde" | sudo tee ${IMG_TMP_MOUNT}/etc/hostname
+	sudo cp -a image/. ${IMG_TMP_MOUNT}
+	sudo umount -R ${IMG_TMP_MOUNT}
+
+.PHONY: mount
+mount: env # Mount the image
+	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
+
+.PHONY: umount
+umount: env # Unmount the image
 	sudo umount -R ${IMG_TMP_MOUNT}
 
 .PHONY: ${INSTALL_DIR}
@@ -82,7 +91,7 @@ install: env ${INSTALL_DIR} # Copy the image to the install directory
 	cp ${SOURCE_DIR}/arch/${ARCH_LINUX_BUILD_NAME}/boot/bzImage ${INSTALL_DIR}/${KERNEL_NAME}
 
 .PHONY: qemu
-qemu: env
+qemu: env # Run qemu
 	${QEMU_DIR}/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide ${QEMU_FLAGS}
 
 .PHONY: clean
