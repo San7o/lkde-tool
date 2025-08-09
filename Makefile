@@ -13,11 +13,17 @@ CONFIG_NAME?=.config-${ENV}
 IMG_NAME?=image-${ENV}.img
 IMG_TMP_MOUNT?=${PWD}/mnt/${IMG_NAME}
 IMG_FS?=ext4
+IMG_PACKAGES?=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc
+IMG_USER?=test
 DEBOOTSTRAP_DIR?=/usr/sbin
 QEMU_DIR?=/usr/bin
 QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             --enable-kvm\
-            -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0
+            -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0\
+            -netdev user,id=net0 \
+            -device virtio-net-pci,netdev=net0\
+            -m 2G\
+            -smp 4
 
 # Internal variables
 ifeq (${ARCH},amd64)
@@ -69,9 +75,12 @@ image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
 	mkfs.${IMG_FS} ${INSTALL_DIR}/${IMG_NAME}
 	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
-	sudo ${DEBOOTSTRAP_DIR}/debootstrap --arch ${ARCH} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
+	sudo ${DEBOOTSTRAP_DIR}/debootstrap --arch ${ARCH} --include=${IMG_PACKAGES} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo 'root:root' | chpasswd"
 	sudo cp -a image/. ${IMG_TMP_MOUNT}
+	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "useradd -m -u 1000 -s /bin/bash ${IMG_USER}"
+	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "chown -R ${IMG_USER}:${IMG_USER} /lkde"
+	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo '${IMG_USER}:${IMG_USER}' | chpasswd"
 	sudo umount -R ${IMG_TMP_MOUNT}
 
 .PHONY: mount
@@ -142,6 +151,8 @@ settings: # Shows value of variables
 	@echo IMG_NAME=${IMG_NAME}
 	@echo IMG_TMP_MOUNT=${IMG_TMP_MOUNT}
 	@echo IMG_FS=${IMG_FS}
+	@echo IMG_PACKAGES=${IMG_PACKAGES}
+	@echo IMG_USER=${IMG_USER}
 	@echo DEBPPTSTRAP_DIR=${DEBOOTSTRAP_DIR}
 	@echo QEMU_DIR=${QEMU_DIR}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}
