@@ -110,7 +110,7 @@ particular directory structure, which is summarized below:
 #+end_src
 
 In =sources= you should place Linux source trees in subdirectories,
-line =sources/bpf-next= or =sources/linux-next=.  When generating some
+like =sources/bpf-next= or =sources/linux-next=.  When generating some
 files like a kernel bzImage or a qemu image, the output will be placed
 in a dedicated directory in =install= which will be created if not
 present. =config/= contains the kernel configuration files, usually
@@ -129,10 +129,10 @@ tree, you can create the =bpf-next= environment.
   touch .env-bpf-next
 #+end_src
 
-And place the sources in =sources/bpf-next=. If you don't make
-changes, you will use the default settings and conventions, and
-develop for x86_64. To make a new config file, you have several
-options like:
+And place the sources in =sources/bpf-next=. If you don't change
+anything in the =.env= file, you will use the default settings and
+conventions. x86_64 is the default architecture. To make a new config
+file, you have several options like:
 
 #+begin_src bash
   make defconfig ENV=bpf-next
@@ -166,7 +166,7 @@ You can boot the image and the built kernel with:
 
 From inside the virtual machine, you have access to the project's root
 directory in =/lkde=. This is useful if you want to build and test
-other kernel from an architecture different than your host machine.
+other kernels from an architecture different than your host machine.
 
 There are other useful commands, and you could use this framework
 for any project really.
