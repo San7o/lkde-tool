@@ -1,3 +1,174 @@
+#+startup: indent enable
+
 * LKDE
 
+This repository contains my opinionated Linux Kernel Development
+Environment. This is my setup to keep up, develop and test kernel
+patches for various architectures. This project was born with Linux in
+mind, but it is easily customizable to develop anything else (FreeBSD
+support is already planned).
+
+** Environments
+
+The core idea of the LKDE workflow is the =environment=. An
+environment is a full development setup: you can write a patch,
+compile the kernel, run it in a virtual machine, and so on. The root
+Makefile provides useful commands to do these sort of things, and you
+can customize them by changing the variable in the Makefile. Run =make
+help= if you don't know where to start.
+
+#+begin_src
+$ make help
 Linux Kernel Development Environment
+
+make targets:
+
+build        Build the kernel
+clean        Clean the build and installation files
+defconfig    Generate the default .config file
+diff         Git fetch
+diff-origin  Git fetch
+distclean    Clean config files
+env          Print the ENV value
+fetch        Git fetch
+help         Shows help
+image        Create the image
+install      Copy the image to the install directory
+log          Git log
+menuconfig   Generate the tinyconfig
+merge        Git fetch
+mount        Mount the image
+pull         Git pull
+qemu         Run qemu
+settings     Shows value of variables
+tinyconfig   Generate the tinyconfig
+umount       Unmount the image
+#+end_src
+
+This project allows you to have any number of environments, all under
+this directory. For any operation, whether it is compiling or reading
+the git logs, you can always specify which environment to use.
+
+You can select the environment by setting the =ENV= variable to the
+name of the environment. For example, by appending it after the make
+commands you can do:
+
+#+begin_src
+make build ENV=bpf-next
+#+end_src
+
+to build the ebpf-next kernel tree. Or:
+
+#+begin_src
+make diff ENV=lsm
+#+end_src
+
+to see your local changes in the Linux Security Module tree. Of
+course, you can also have multiple environment based on the same tree,
+for example to test different architectures.
+
+** Creating an environment
+
+Creating an environment is as simple as creating a file =.env-NAME=
+where =NAME= is the name of your environment. This file will be loaded
+by the Makefile so you can specify the variables to fit your
+needs. You can get a list of the most useful variables and their
+values with =make settings=, or simply look at the Makefile.
+
+#+begin_src
+$ make settings
+ENV=linux
+ARCH=amd64
+SOURCE_DIR=/home/santo/projects/LKDE/sources/linux
+INSTALL_DIR=/home/santo/projects/LKDE/install/linux
+KERNEL_NAME=kernel-linux
+MAKE_FLAGS=-j4
+CONFIG_DIR=/home/santo/projects/LKDE/config
+CONFIG_NAME=.config-linux
+IMG_NAME=image-linux.img
+IMG_TMP_MOUNT=/home/santo/projects/LKDE/mnt/image-linux.img
+IMG_FS=ext4
+IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc
+IMG_USER=test
+DEBPPTSTRAP_DIR=/usr/sbin
+QEMU_DIR=/usr/bin
+QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -m 4G -smp 4
+#+end_src
+
+** Directory Structure
+
+In order to have multiple environments, this project follows a
+particular directory structure, which is summarized below:
+
+#+begin_src
+  .
+├── config        # .config file for the kernel build
+├── image         # additions to the root directory in the image
+├── install       # compiled kernels and bootable images
+├── Makefile      # the root makefile
+└── sources       # kernel sources
+#+end_src
+
+In =sources= you should place Linux source trees in subdirectories,
+line =sources/bpf-next= or =sources/linux-next=.  When generating some
+files like a kernel bzImage or a qemu image, the output will be placed
+in a dedicated directory in =install= which will be created if not
+present. =config/= contains the kernel configuration files, usually
+named =.config-ENV-NAME=. All the content in =image/= will be copied
+to the root filesystem of the image. Since everything is very
+customizable, you can choose to structure your workflow differently by
+specifying where things are and where things should be, or the naming
+conventions, though the variables in the =.env= file.
+
+** Linux Workflow
+
+After you downloaded some Linux sources, for example the =bpf-next=
+tree, you can create the =bpf-next= environment.
+
+#+begin_src bash
+  touch .env-bpf-next
+#+end_src
+
+And place the sources in =sources/bpf-next=. If you don't make
+changes, you will use the default settings and conventions, and
+develop for x86_64. To make a new config file, you have several
+options like:
+
+#+begin_src bash
+  make defconfig ENV=bpf-next
+  make menuconfig ENV=bpf-next
+#+end_src
+
+This will create the file =config/.env-bpf-next= with your
+configuration. You can build the kernel using this configuration with:
+
+#+begin_src bash
+  make build ENV=bpf-next
+#+end_src
+
+And install it:
+
+#+begin_src bash
+  make install ENV=bpf-next
+#+end_src
+
+If you didn't build an image, run:
+
+#+begin_src bash
+  make image ENV=bpf-next
+#+end_src
+
+You can boot the image and the built kernel with:
+
+#+begin_src bash
+  make qemu ENV=bpf-next
+#+end_src
+
+From inside the virtual machine, you have access to the project's root
+directory in =/lkde=. This is useful if you want to build and test
+other kernel from an architecture different than your host machine.
+
+There are other useful commands, and you could use this framework
+for any project really.
+
+Happy hacking!

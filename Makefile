@@ -22,7 +22,7 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0\
             -netdev user,id=net0 \
             -device virtio-net-pci,netdev=net0\
-            -m 2G\
+            -m 4G\
             -smp 4
 
 # Internal variables
@@ -71,7 +71,7 @@ ${IMG_TMP_MOUNT}:
 
 .PHONY: image
 image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
-	${QEMU_DIR}/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} 1g
+	${QEMU_DIR}/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} 5g
 	mkfs.${IMG_FS} ${INSTALL_DIR}/${IMG_NAME}
 	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
