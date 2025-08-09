@@ -86,15 +86,39 @@ qemu: env
 	${QEMU_DIR}/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide ${QEMU_FLAGS}
 
 .PHONY: clean
-clean: env # Clean the build files
+clean: env # Clean the build and installation files
 	make -C ${SOURCE_DIR} clean
 	if [ "${INSTALL_DIR}" != "" ]; then rm -rf ${INSTALL_DIR}/; fi
 	if [ -d ${IMG_TMP_MOUNT} ]; then rm -r ${IMG_TMP_MOUNT}; fi
 
 .PHONY: distclean
-distclean: env clean
+distclean: env # Clean config files
 	make -C ${SOURCE_DIR} distclean
 	rm ${CONFIG_DIR}/${CONFIG_NAME}
+
+.PHONY: log
+log: env # Git log
+	cd ${SOURCE_DIR} && git log
+
+.PHONY: fetch
+fetch: env # Git fetch
+	cd ${SOURCE_DIR} && git fetch
+
+.PHONY: merge
+merge: env # Git fetch
+	cd ${SOURCE_DIR} && git merge
+
+.PHONY: diff-origin
+diff-origin: env # Git fetch
+	cd ${SOURCE_DIR} && git diff origin
+
+.PHONY: diff
+diff: env # Git fetch
+	cd ${SOURCE_DIR} && git diff
+
+.PHONY: pull
+pull: env # Git pull
+	cd ${SOURCE_DIR} && git pull
 
 .PHONY: settings
 settings: # Shows value of variables
