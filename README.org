@@ -35,7 +35,7 @@ help         Shows help
 image        Create the image
 install      Copy the image to the install directory
 log          Git log
-menuconfig   Generate the tinyconfig
+menuconfig   Run menuconfig
 merge        Git merge
 mount        Mount the image
 pull         Git pull

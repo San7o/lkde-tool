@@ -13,8 +13,9 @@ CONFIG_NAME?=.config-${ENV}
 IMG_NAME?=image-${ENV}.img
 IMG_TMP_MOUNT?=${PWD}/mnt/${IMG_NAME}
 IMG_FS?=ext4
-IMG_PACKAGES?=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc
+IMG_PACKAGES?=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux
 IMG_USER?=test
+IMG_SIZE?=10G
 DEBOOTSTRAP_DIR?=/usr/sbin
 QEMU_DIR?=/usr/bin
 QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
@@ -22,7 +23,7 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0\
             -netdev user,id=net0 \
             -device virtio-net-pci,netdev=net0\
-            -m 4G\
+            -m 6G\
             -smp 4
 
 # Internal variables
@@ -55,7 +56,7 @@ tinyconfig: ${CONFIG_DIR} env # Generate the tinyconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: menuconfig
-menuconfig: ${CONFIG_DIR} env # Generate the tinyconfig
+menuconfig: ${CONFIG_DIR} env # Run menuconfig
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
 	make -C ${SOURCE_DIR} menuconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
@@ -71,9 +72,10 @@ ${IMG_TMP_MOUNT}:
 
 .PHONY: image
 image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
-	${QEMU_DIR}/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} 5g
+	${QEMU_DIR}/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} ${IMG_SIZE}
 	mkfs.${IMG_FS} ${INSTALL_DIR}/${IMG_NAME}
 	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
+	sync
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
 	sudo ${DEBOOTSTRAP_DIR}/debootstrap --arch ${ARCH} --include=${IMG_PACKAGES} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo 'root:root' | chpasswd"
@@ -153,6 +155,7 @@ settings: # Shows value of variables
 	@echo IMG_FS=${IMG_FS}
 	@echo IMG_PACKAGES=${IMG_PACKAGES}
 	@echo IMG_USER=${IMG_USER}
+	@echo IMG_SIZE=${IMG_SIZE}
 	@echo DEBPPTSTRAP_DIR=${DEBOOTSTRAP_DIR}
 	@echo QEMU_DIR=${QEMU_DIR}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}

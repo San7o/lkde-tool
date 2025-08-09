@@ -1,0 +1,33 @@
+From 16da2ffa4bbab3cd7bac3fbaa0da9ca5ebcba329 Mon Sep 17 00:00:00 2001
+From: San7o <santigio2003@gmail.com>
+Date: Sat, 9 Aug 2025 20:38:22 +0200
+Subject: [PATCH] scripts: enable vmlinux sorttable on shared directories
+
+scripts/sorttable fails with a segmentation fault when sorting
+vmlinux when this is located in a shared directory.
+This patch fixes the problem by moving vmlinux to a temporary
+location, then calling sorttable and moving vmlinux back.
+
+Signed-off-by: San7o <santigio2003@gmail.com>
+---
+ scripts/link-vmlinux.sh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/link-vmlinux.sh b/scripts/link-vmlinux.sh
+index 51367c2bfc21..43b3229a2dd5 100755
+--- a/scripts/link-vmlinux.sh
++++ b/scripts/link-vmlinux.sh
+@@ -175,7 +175,9 @@ mksysmap()
+ sorttable()
+ {
+ 	${NM} -S ${1} > .tmp_vmlinux.nm-sort
+-	${objtree}/scripts/sorttable -s .tmp_vmlinux.nm-sort ${1}
++	cp ${1} /tmp/.${1}
++	${objtree}/scripts/sorttable -s .tmp_vmlinux.nm-sort /tmp/.${1}
++	cp /tmp/.${1} ${1}
+ }
+ 
+ cleanup()
+-- 
+2.49.0
+
