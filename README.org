@@ -14,7 +14,7 @@ The core idea of the LKDE workflow is the =environment=. An
 environment is a full development setup: you can write a patch,
 compile the kernel, run it in a virtual machine, and so on. The root
 Makefile provides useful commands to do these sort of things, and you
-can customize them by changing the variable in the Makefile. Run
+can customize them by changing the variables in the Makefile. Run
 =make help= if you don't know where to start.
 
 #+begin_src
