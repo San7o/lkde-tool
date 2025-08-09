@@ -123,15 +123,15 @@ fetch: env # Git fetch
 	cd ${SOURCE_DIR} && git fetch
 
 .PHONY: merge
-merge: env # Git fetch
+merge: env # Git merge
 	cd ${SOURCE_DIR} && git merge
 
 .PHONY: diff-origin
-diff-origin: env # Git fetch
+diff-origin: env # Git diff origin
 	cd ${SOURCE_DIR} && git diff origin
 
 .PHONY: diff
-diff: env # Git fetch
+diff: env # Git diff local
 	cd ${SOURCE_DIR} && git diff
 
 .PHONY: pull

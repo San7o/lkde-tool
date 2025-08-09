@@ -14,8 +14,8 @@ The core idea of the LKDE workflow is the =environment=. An
 environment is a full development setup: you can write a patch,
 compile the kernel, run it in a virtual machine, and so on. The root
 Makefile provides useful commands to do these sort of things, and you
-can customize them by changing the variable in the Makefile. Run =make
-help= if you don't know where to start.
+can customize them by changing the variable in the Makefile. Run
+=make help= if you don't know where to start.
 
 #+begin_src
 $ make help
@@ -26,8 +26,8 @@ make targets:
 build        Build the kernel
 clean        Clean the build and installation files
 defconfig    Generate the default .config file
-diff         Git fetch
-diff-origin  Git fetch
+diff         Git diff local
+diff-origin  Git diff origin
 distclean    Clean config files
 env          Print the ENV value
 fetch        Git fetch
@@ -36,7 +36,7 @@ image        Create the image
 install      Copy the image to the install directory
 log          Git log
 menuconfig   Generate the tinyconfig
-merge        Git fetch
+merge        Git merge
 mount        Mount the image
 pull         Git pull
 qemu         Run qemu
