@@ -77,22 +77,36 @@ values with =make settings=, or simply look at the Makefile.
 
 #+begin_src
 $ make settings
+* General:
+
 ENV=linux
 ARCH=amd64
-SOURCE_DIR=/home/santo/projects/LKDE/sources/linux
-INSTALL_DIR=/home/santo/projects/LKDE/install/linux
 KERNEL_NAME=kernel-linux
 MAKE_FLAGS=-j4
+
+* Directories:
+
+WORKTREE=
+SOURCE_DIR=/home/santo/projects/LKDE/sources/linux/
+INSTALL_DIR=/home/santo/projects/LKDE/install/linux
 CONFIG_DIR=/home/santo/projects/LKDE/config
 CONFIG_NAME=.config-linux
+
+* Rootfs image:
+
 IMG_NAME=image-linux.img
 IMG_TMP_MOUNT=/home/santo/projects/LKDE/mnt/image-linux.img
 IMG_FS=ext4
-IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc
+IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux
 IMG_USER=test
+IMG_PASSWD=test
+IMG_SIZE=10G
+
+* Executables:
+
 DEBPPTSTRAP_DIR=/usr/sbin
 QEMU_DIR=/usr/bin
-QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -m 4G -smp 4
+QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -m 6G -smp 4
 #+end_src
 
 ** Directory Structure
@@ -106,6 +120,7 @@ particular directory structure, which is summarized below:
 ├── image         # additions to the root directory in the image
 ├── install       # compiled kernels and bootable images
 ├── Makefile      # the root makefile
+├── patches       # kernel patches
 └── sources       # kernel sources
 #+end_src
 

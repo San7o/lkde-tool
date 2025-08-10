@@ -1,23 +1,58 @@
+#  * LKDE
+#  by Giovanni Santini
+
 ENV?=linux
+PWD=${shell pwd}
 include .env-${ENV}
 
-PWD=${shell pwd}
+### Config variables
+
+## General
+
+# Target architecture
 ARCH?=amd64
-SOURCE_DIR?=${PWD}/sources/${ENV}
-INSTALL_DIR?=${PWD}/install/${ENV}
+# Name of the kernel image
 KERNEL_NAME?=kernel-${ENV}
-MAKE_FLAGS?=
-MAKE_FLAGS+=-j${shell nproc}
+# Compilation flags
+MAKE_FLAGS?=-j${shell nproc}
+
+## Directories
+
+# Git worktree
+WORKTREE?=
+# Directory of the kernel sources
+SOURCE_DIR?=${PWD}/sources/${ENV}/${WORKTREE}
+# Output installation directory
+INSTALL_DIR?=${PWD}/install/${ENV}
+# Directory of the kernel config files
 CONFIG_DIR?=${PWD}/config
+# Name of the config file
 CONFIG_NAME?=.config-${ENV}
+
+## Rootfs Image
+
+# Name of the root filesystem image used to boot the kernel
 IMG_NAME?=image-${ENV}.img
+# A temporary location where the image will be mounted for modification
 IMG_TMP_MOUNT?=${PWD}/mnt/${IMG_NAME}
+# Filesystem of the root image
 IMG_FS?=ext4
+# Packages that should be installed in the root image
 IMG_PACKAGES?=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux
+# User of the root filesystem image
 IMG_USER?=test
+# Password of the user in the root filesystem image
+IMG_PASSWD?=test
+# Size of the root filesystem image
 IMG_SIZE?=10G
+
+## Executables
+
+# Directory of the debootstrap executable
 DEBOOTSTRAP_DIR?=/usr/sbin
+# Directory of the qemu executables
 QEMU_DIR?=/usr/bin
+# Qemu flags
 QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             --enable-kvm\
             -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0\
@@ -26,7 +61,8 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -m 6G\
             -smp 4
 
-# Internal variables
+## Internal variables
+
 ifeq (${ARCH},amd64)
 ARCH_LINUX_BUILD_NAME=x86
 ARCH_QEMU=x86_64
@@ -82,7 +118,7 @@ image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
 	sudo cp -a image/. ${IMG_TMP_MOUNT}
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "useradd -m -u 1000 -s /bin/bash ${IMG_USER}"
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "chown -R ${IMG_USER}:${IMG_USER} /lkde"
-	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo '${IMG_USER}:${IMG_USER}' | chpasswd"
+	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo '${IMG_USER}:${IMG_PASSWD}' | chpasswd"
 	sudo umount -R ${IMG_TMP_MOUNT}
 
 .PHONY: mount
@@ -142,20 +178,26 @@ pull: env # Git pull
 
 .PHONY: settings
 settings: # Shows value of variables
+	@echo -e "\n* General:\n"
 	@echo ENV=${ENV}
 	@echo ARCH=${ARCH}
-	@echo SOURCE_DIR=${SOURCE_DIR}
-	@echo INSTALL_DIR=${INSTALL_DIR}
 	@echo KERNEL_NAME=${KERNEL_NAME}
 	@echo MAKE_FLAGS=${MAKE_FLAGS}
+	@echo -e "\n* Directories:\n"
+	@echo WORKTREE=${WORKTREE}
+	@echo SOURCE_DIR=${SOURCE_DIR}
+	@echo INSTALL_DIR=${INSTALL_DIR}
 	@echo CONFIG_DIR=${CONFIG_DIR}
 	@echo CONFIG_NAME=${CONFIG_NAME}
+	@echo -e "\n* Rootfs image:\n"
 	@echo IMG_NAME=${IMG_NAME}
 	@echo IMG_TMP_MOUNT=${IMG_TMP_MOUNT}
 	@echo IMG_FS=${IMG_FS}
 	@echo IMG_PACKAGES=${IMG_PACKAGES}
 	@echo IMG_USER=${IMG_USER}
+	@echo IMG_PASSWD=${IMG_PASSWD}
 	@echo IMG_SIZE=${IMG_SIZE}
+	@echo -e "\n* Executables:\n"
 	@echo DEBPPTSTRAP_DIR=${DEBOOTSTRAP_DIR}
 	@echo QEMU_DIR=${QEMU_DIR}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}
