@@ -15,7 +15,16 @@
     (setq lkde-base-dir base-dir)
     (message (concat "Set lkde-base-dir variable to " base-dir))))
 
+(defun lkde-command ()
+  ;; Run an interactive command with default-directory set to env's SOURCE_DIR
+  (interactive)
+  (let ((default-directory (shell-command-to-string
+                     (concat "ENV=" lkde-env " make -C " lkde-base-dir " -s source-dir")))
+        (command (intern (completing-read "Enter command: " obarray 'commandp t))))
+      (call-interactively command)))
+
 (defun lkde ()
+  ;; Run a shell command
   (interactive)
   (let* ((default (concat "ENV=" lkde-env " make -C " lkde-base-dir " "))
          (command (read-from-minibuffer "Shell command: " default)))

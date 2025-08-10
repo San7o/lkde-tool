@@ -176,6 +176,12 @@ diff: env # Git diff local
 pull: env # Git pull
 	cd ${SOURCE_DIR} && git pull
 
+.PHONY: source-dir
+# This is used by other tools, like emacs, to know where to look for
+# the sources
+source-dir: # Output the kernel source directory
+	@echo ${SOURCE_DIR}
+
 .PHONY: settings
 settings: # Shows value of variables
 	@echo -e "\n* General:\n"

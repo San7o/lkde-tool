@@ -8,6 +8,9 @@ patches for various architectures. This project was born with Linux in
 mind, but it is easily customizable to develop anything else (FreeBSD
 support is already planned).
 
+Not that this project is a work in progress and it will recive
+continuous changes as I play with it.
+
 ** Environments
 
 The core idea of the LKDE workflow is the =environment=. An
@@ -71,6 +74,12 @@ for example to test different architectures.
 
 You can easily use LKDE on emacs by loading =lkde.el=. This file
 contains some simple shortcuts to use the framework conveniently.
+
+You can set the LKDE directory with =M-x lkde-set-base-dir= and the
+environment with =M-x lkde-set-env=. Then tou can run =M-x lkde= to
+run a make command, or =M-x lkde-command= to run an interactive
+command with the default directory set to the environment's
+=SOURCE_DIR=.
 
 ** Creating an environment
 
