@@ -67,6 +67,11 @@ to see your local changes in the Linux Security Module tree. Of
 course, you can also have multiple environment based on the same tree,
 for example to test different architectures.
 
+** Emacs integration
+
+You can easily use LKDE on emacs by loading =lkde.el=. This file
+contains some simple shortcuts to use the framework conveniently.
+
 ** Creating an environment
 
 Creating an environment is as simple as creating a file =.env-NAME=
@@ -115,7 +120,7 @@ In order to have multiple environments, this project follows a
 particular directory structure, which is summarized below:
 
 #+begin_src
-  .
+.
 ├── config        # .config file for the kernel build
 ├── image         # additions to the root directory in the image
 ├── install       # compiled kernels and bootable images
