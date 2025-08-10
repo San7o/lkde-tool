@@ -8,7 +8,7 @@ patches for various architectures. This project was born with Linux in
 mind, but it is easily customizable to develop anything else (FreeBSD
 support is already planned).
 
-Not that this project is a work in progress and it will recive
+Note that this project is a work in progress and it will recive
 continuous changes as I play with it.
 
 ** Environments
@@ -76,7 +76,7 @@ You can easily use LKDE on emacs by loading =lkde.el=. This file
 contains some simple shortcuts to use the framework conveniently.
 
 You can set the LKDE directory with =M-x lkde-set-base-dir= and the
-environment with =M-x lkde-set-env=. Then tou can run =M-x lkde= to
+environment with =M-x lkde-set-env=. Then you can run =M-x lkde= to
 run a make command, or =M-x lkde-command= to run an interactive
 command with the default directory set to the environment's
 =SOURCE_DIR=.
@@ -87,7 +87,8 @@ Creating an environment is as simple as creating a file =.env-NAME=
 where =NAME= is the name of your environment. This file will be loaded
 by the Makefile so you can specify the variables to fit your
 needs. You can get a list of the most useful variables and their
-values with =make settings=, or simply look at the Makefile.
+values with =make settings=, or simply look at the Makefile (very
+useful when using magit).
 
 #+begin_src
 $ make settings
@@ -125,7 +126,7 @@ QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,pat
 
 ** Directory Structure
 
-In order to have multiple environments, this project follows a
+In order to intergrate multiple environments, this project follows a
 particular directory structure, which is summarized below:
 
 #+begin_src
