@@ -419,8 +419,8 @@ settings: # Shows value of variables
 	@echo QEMU_VERSION=${QEMU_VERSION}
 	@echo QEMU_SSH_PORT=${QEMU_SSH_PORT}
 	@echo QEMU_MEM=${QEMU_MEM}
-	@echo QEMU_FLAGS=${QEMU_FLAGS}
 	@echo QEMU_SOCKETS=${QEMU_SOCKETS}
+	@echo QEMU_FLAGS=${QEMU_FLAGS}
 	@echo DEPS_EXTERNAL_FEDORA=${DEPS_EXTERNAL_FEDORA}
 
 .PHONY: help
