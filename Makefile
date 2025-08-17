@@ -111,8 +111,7 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -m 6G\
             -smp 4
 # Other dependencies
-DEPS_EXTERNAL_FEDORA?=libcap-ng-devel\
-                      debootstrap
+DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget
 
 
 ### Commands ---------------------------------------------------------
@@ -148,6 +147,10 @@ menuconfig: ${CONFIG_DIR} env # Run menuconfig
 build: env ${CONFIG_DIR}/${CONFIG_NAME} # Build the kernel
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} ${MAKE_FLAGS}
+
+.PHONY: install
+install: env ${INSTALL_DIR} # Copy the image to the install directory
+	cp ${SOURCE_DIR}/arch/${ARCH_LINUX_BUILD_NAME}/boot/bzImage ${INSTALL_DIR}/${KERNEL_NAME}
 
 .PHONY: clean
 clean: install-clean env # Clean the build and installation files
@@ -201,10 +204,6 @@ umount: env # Unmount the image
 .PHONY: ${INSTALL_DIR}
 ${INSTALL_DIR}:
 	mkdir -p ${INSTALL_DIR}
-
-.PHONY: install
-install: env ${INSTALL_DIR} # Copy the image to the install directory
-	cp ${SOURCE_DIR}/arch/${ARCH_LINUX_BUILD_NAME}/boot/bzImage ${INSTALL_DIR}/${KERNEL_NAME}
 
 .PHONY: qemu
 qemu: env # Run qemu
@@ -287,8 +286,8 @@ deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INST
 
 ## Binutils ----------------------------------------------------------
 
-BINUTILS_BUILD_DIR=${DEPS_SOURCES_DIR}/binutils-${BINUTILS_VERSION}/build
-BINUTILS_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}
+BINUTILS_BUILD_DIR=${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}/build
+BINUTILS_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
              --sysconfdir=/etc   \
              --enable-ld=default \
              --enable-plugins    \
@@ -316,7 +315,7 @@ deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BU
 
 ## Qemu --------------------------------------------------------------
 
-QEMU_BUILD_DIR=${DEPS_SOURCES_DIR}/qemu-${QEMU_VERSION}/build
+QEMU_BUILD_DIR=${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}/build
 QEMU_FLAGS?=../configure --prefix=${DEPS_INSTALL_DIR} \
              --sysconfdir=/etc           \
              --localstatedir=/var        \
@@ -326,8 +325,8 @@ QEMU_FLAGS?=../configure --prefix=${DEPS_INSTALL_DIR} \
              --enable-slirp
 
 ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}:
-	wget --directory-prefix ${DEPS_SOURCE_DIR} https://https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz
-	tar -xf ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} -C ${DEPS_SOURCE_DIR}/
+	wget --directory-prefix ${DEPS_SOURCE_DIR} https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz
+	tar -xf ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}.tar.xz -C ${DEPS_SOURCE_DIR}/
 	rm -rf ${DEPS_SOURCE_DIR}/*.tar.xz*
 
 
@@ -336,18 +335,18 @@ ${QEMU_BUILD_DIR}: ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}
 
 deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_INSTALL_DIR}
 	cd ${QEMU_BUILD_DIR} && ../configure ${QEMU_FLAGS}
-	cd ${BINUTILS_BUILD_DIR} && make ${MAKE_FLAGS}
-	cd ${BINUTILS_BUILD_DIR} && make install
+	cd ${QEMU_BUILD_DIR} && make ${MAKE_FLAGS}
+	cd ${QEMU_BUILD_DIR} && make install
 
 
 ## Debootstrap -------------------------------------------------------
 
 ${DEPS_SOURCE_DIR}/debootstrap:
 	wget --directory-prefix ${DEPS_SOURCE_DIR} http://deb.debian.org/debian/pool/main/d/debootstrap/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz
-	tar -xf ${DEPS_SOURCE_DIR}/debootstrap-${DEBOOTSTRAP_VERSION} -C ${DEPS_SOURCE_DIR}/
+	tar -xf ${DEPS_SOURCE_DIR}/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
 	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
 
-deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap-${DEBOOTSTRAP_VERSION} ${DEPS_INSTALL_DIR}
+deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR}
 	ln -s ${DEPS_SOURCE_DIR}/debootstrap/debootstrap ${DEPS_INSTALL_DIR}/bin
 
 

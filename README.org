@@ -2,23 +2,106 @@
 
 * LKDE
 
-This repository contains my opinionated Linux Kernel Development
+This repository contains my personal Linux Kernel Development
 Environment. This is my setup to keep up, develop and test kernel
 patches for various architectures. This project was born with Linux in
-mind, but it is easily customizable to develop anything else (FreeBSD
+mind, but it is easily customizable to develop anything else (NetBSD
 support is already planned).
 
-Note that this project is a work in progress and it will recive
-continuous changes as I play with it.
+LKDE is very simple and easy to hack with compared to similar
+projects, making it both powerful and fun.
 
 ** Environments
 
 The core idea of the LKDE workflow is the =environment=. An
-environment is a full development setup: you can write a patch,
-compile the kernel, run it in a virtual machine, and so on. The root
-Makefile provides useful commands to do these sort of things, and you
-can customize them by changing the variables in the Makefile. Run
-=make help= if you don't know where to start.
+environment holds all the settings of your development setup, such as
+the target architecture, the compiler version, the source tree,
+etc. Environments allow you to perform the same development workflow
+regardless of the settings: it represents a central place to store
+your current setup, and enables you to switch between one environment
+and the other with ease.
+
+You can get a list of the most useful settings and their values with
+=make settings=, or simply by reading the root makefile:
+
+#+begin_src bash
+$ make settings
+
+build:
+
+ENV=linux
+BUILD_ARCH=x86_64
+HOST_ARCH=x86_64
+TARGET_ARCH=x86_64
+KERNEL_NAME=kernel-linux-x86_64
+NPROC=4
+MAKE_FLAGS="-j4"
+KERNEL_FLAGS="ARCH=x86_64 CROSS_COMPILE=/home/santo/projects/LKDE/usr/x86_64-pc-linux-gnu/bin/x86_64-pc-linux-gnu-"
+
+directories:
+
+WORKTREE=
+SOURCE_DIR=/home/santo/projects/LKDE/sources/linux/
+INSTALL_DIR=/home/santo/projects/LKDE/install/linux-x86_64
+CONFIG_DIR=/home/santo/projects/LKDE/config
+CONFIG_NAME=.config-linux
+DEPS_SOURCE_DIR=/home/santo/projects/LKDE/deps
+DEPS_INSTALL_DIR=/home/santo/projects/LKDE/usr
+
+rootfs image:
+
+IMG_NAME=image-linux-x86_64.img
+IMG_TMP_MOUNT=/home/santo/projects/LKDE/mnt/image-linux-x86_64.img
+IMG_FS=ext4
+IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux,sudo
+IMG_USER=test
+IMG_PASSWD=test
+IMG_SIZE=10G
+
+dependencies:
+
+GCC_VERSION=15.2.0
+GCC_MIRROR=ftp.fu-berlin.de
+BINUTILS_VERSION=2.45
+CC_DIR=/home/santo/projects/LKDE/usr/x86_64-pc-linux-gnu/bin
+DEBOOTSTRAP_VERSION=1.0.141
+QEMU_VERSION=10.0.3
+QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -m 6G -smp 4
+DEPS_EXTERNAL_FEDORA=libcap-ng-devel wget
+#+end_src
+
+You can set the value of these variables in an environment file named
+=.env-NAME= where =NAME= is the name of your environmnet.
+
+#+begin_src
+  touch .env-bpf-next
+  vim .env-bpf-next # Add variables as you need
+#+end_src
+
+Then, you can specify which environment to use by setting or exporting
+the =ENV= variable with the name of the environment. For example:
+
+#+begin_src
+make build ENV=bpf-next
+#+end_src
+
+or:
+
+#+begin_src
+export ENV=bpf-next
+# All subsequent commands will use this environment
+make build
+#+end_src
+
+Obviously you can have any number of environments. Moreover, an
+environment may import another one with the =include= keyword, so you
+can have some shared settings between different environments.
+
+** Make commands and dependencies
+
+This project provides a series of make commands to aid your workflow,
+while honoring your environment settings. Run =make help= to get a
+list of commands:
 
 #+begin_src
 $ make help
@@ -26,129 +109,126 @@ Linux Kernel Development Environment
 
 make targets:
 
-build        Build the kernel
-clean        Clean the build and installation files
-defconfig    Generate the default .config file
-diff         Git diff local
-diff-origin  Git diff origin
-distclean    Clean config files
-env          Print the ENV value
-fetch        Git fetch
-help         Shows help
-image        Create the image
-install      Copy the image to the install directory
-log          Git log
-menuconfig   Run menuconfig
-merge        Git merge
-mount        Mount the image
-pull         Git pull
-qemu         Run qemu
-settings     Shows value of variables
-tinyconfig   Generate the tinyconfig
-umount       Unmount the image
+build            Build the kernel
+clean            Clean the build and installation files
+defconfig        Generate the default .config file
+deps-binutils    Download, compile and install binutils
+deps             Download and build dependencies
+deps-fedora      Install build dependencies in fedora
+deps-gcc         Download, compile and install gcc
+distclean        Clean config files
+env              Print the ENV value
+git-diff         Git diff local
+git-diff-origin  Git diff origin
+git-fetch        Git fetch
+git-log          Git log
+git-merge        Git merge
+git-pull         Git pull
+help             Shows help
+image            Create the image
+install-clean    Clean the installation files
+install          Copy the image to the install directory
+menuconfig       Run menuconfig
+mount            Mount the image
+qemu             Run qemu
+settings         Shows value of variables
+source-dir       Output the kernel source directory
+tinyconfig       Generate the tinyconfig
+umount           Unmount the image
 #+end_src
 
-This project allows you to have any number of environments, all under
-this directory. For any operation, whether it is compiling or reading
-the git logs, you can always specify which environment to use.
+LKDE should download and compile all the dependencies you need to work
+with the linux kernel (cross-compilers, qemu...). The only
+requirements to use LKDE are gcc + binutils, wget and the standard
+unix tools.
 
-You can select the environment by setting the =ENV= variable to the
-name of the environment. For example, by appending it after the make
-commands you can do:
+** lkde.sh
+
+To interact with LKDE, you can use the =lkde.sh= script.
 
 #+begin_src
-make build ENV=bpf-next
+$ ./lkde.sh help
+lkde.sh usage:
+
+    set-lkde [string]   set the LKDE_DIR base directory
+    set-env  [string]   set the ENV variable
+    info                read the LKDE_DIR and ENV values
+    help                show help message
+    [string]            execute a command in the LKDE_DIR directory
 #+end_src
 
-to build the ebpf-next kernel tree. Or:
+This command lets you execute any commands from the root directory of
+LKDE, where you can use all the useful make commands.
+
+You first need to set the base directory with =set-lkde=, which
+will be set to the current working directory if no other arguments
+are supplied:
 
 #+begin_src
-make diff ENV=lsm
+$ lkde.sh set-lkde
+LKDE_DIR set to /home/santo/projects/LKDE. You are in a new shell.
+$ _
 #+end_src
 
-to see your local changes in the Linux Security Module tree. Of
-course, you can also have multiple environment based on the same tree,
-for example to test different architectures.
+This will also set the script to your path so you can call it from
+anywhere. You can now run any command throught the =lkde.sh= script as
+if you were in the LKDE root directory:
+
+#+begin_src
+ $ lkde.sh pwd
+ * LKDE_DIR=/home/santo/projects/LKDE
+ * ENV=
+ * command: pwd
+/home/santo/projects/LKDE
+#+end_src
+
+You can also set the environment with =set-env=, which will simply
+export it.
 
 ** Emacs integration
 
-You can easily use LKDE on emacs by loading =lkde.el=. This file
-contains some simple shortcuts to use the framework conveniently.
+You can easily use LKDE on emacs by loading =lkde.el=, which is
+similar to =lkde.sh=.
 
 You can set the LKDE directory with =M-x lkde-set-base-dir= and the
 environment with =M-x lkde-set-env=. Then you can run =M-x lkde= to
 run a make command, or =M-x lkde-command= to run an interactive
 command with the default directory set to the environment's
-=SOURCE_DIR=.
-
-** Creating an environment
-
-Creating an environment is as simple as creating a file =.env-NAME=
-where =NAME= is the name of your environment. This file will be loaded
-by the Makefile so you can specify the variables to fit your
-needs. You can get a list of the most useful variables and their
-values with =make settings=, or simply look at the Makefile (very
-useful when using magit).
-
-#+begin_src
-$ make settings
-* General:
-
-ENV=linux
-ARCH=amd64
-KERNEL_NAME=kernel-linux
-MAKE_FLAGS=-j4
-
-* Directories:
-
-WORKTREE=
-SOURCE_DIR=/home/santo/projects/LKDE/sources/linux/
-INSTALL_DIR=/home/santo/projects/LKDE/install/linux
-CONFIG_DIR=/home/santo/projects/LKDE/config
-CONFIG_NAME=.config-linux
-
-* Rootfs image:
-
-IMG_NAME=image-linux.img
-IMG_TMP_MOUNT=/home/santo/projects/LKDE/mnt/image-linux.img
-IMG_FS=ext4
-IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux
-IMG_USER=test
-IMG_PASSWD=test
-IMG_SIZE=10G
-
-* Executables:
-
-DEBPPTSTRAP_DIR=/usr/sbin
-QEMU_DIR=/usr/bin
-QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -netdev user,id=net0 -device virtio-net-pci,netdev=net0 -m 6G -smp 4
-#+end_src
+=SOURCE_DIR= (very useful when using magit).
 
 ** Directory Structure
 
-In order to intergrate multiple environments, this project follows a
-particular directory structure, which is summarized below:
+In order to intergrate multiple environments, this project defaults to
+a particular directory structure, which is summarized below:
 
 #+begin_src
 .
-├── config        # .config file for the kernel build
+├── config        # .config files for the kernel build
+├── deps          # sources for dependencies
 ├── image         # additions to the root directory in the image
 ├── install       # compiled kernels and bootable images
+├── lkde.el       # emacs tool
+├── lkde.sh       # shell tool
 ├── Makefile      # the root makefile
+├── mnt           # temporary mount directory
 ├── patches       # kernel patches
-└── sources       # kernel sources
+├── sources       # kernel source
+└── usr           # dependencies installation
 #+end_src
 
 In =sources= you should place Linux source trees in subdirectories,
-like =sources/bpf-next= or =sources/linux-next=.  When generating some
-files like a kernel bzImage or a qemu image, the output will be placed
-in a dedicated directory in =install= which will be created if not
+for example =sources/bpf-next=, =sources/linux-next= or
+=sources/linux-6.16=.  When generating some files like a kernel
+bzImage or a qemu image, the output will be placed in a dedicated
+directory in =install/$ENV-$TARGET_ARCH= which will be created if not
 present. =config/= contains the kernel configuration files, usually
 named =.config-ENV-NAME=. All the content in =image/= will be copied
-to the root filesystem of the image. Since everything is very
-customizable, you can choose to structure your workflow differently by
-specifying where things are and where things should be, or the naming
-conventions, though the variables in the =.env= file.
+to the root filesystem of the image.
+
+Since everything is fully customizable, you can choose to structure
+your workflow differently by specifying where things are and where
+things should be, or the naming conventions, though the variables in
+the =.env= file.
 
 ** Linux Workflow
 
@@ -157,48 +237,58 @@ tree, you can create the =bpf-next= environment.
 
 #+begin_src bash
   touch .env-bpf-next
+  export ENV=bpf-next
 #+end_src
 
 And place the sources in =sources/bpf-next=. If you don't change
 anything in the =.env= file, you will use the default settings and
-conventions. x86_64 is the default architecture. To make a new config
-file, you have several options like:
+conventions. x86_64 is the default architecture.
+
+First, you should build your tools for the target architecture, like
+gcc, binutils and qemu.  You can run =make deps= do download and
+compile everything. The sources will be placed in =deps/= and
+installed in =usr/= or =usr/$TARGET_ARCH=:
+
+#+begin_src
+  make deps
+#+end_src
+
+To make a new config file for the kernel build, you have several
+options like:
 
 #+begin_src bash
-  make defconfig ENV=bpf-next
-  make menuconfig ENV=bpf-next
+  make defconfig
+  make menuconfig
 #+end_src
 
 This will create the file =config/.env-bpf-next= with your
 configuration. You can build the kernel using this configuration with:
 
 #+begin_src bash
-  make build ENV=bpf-next
+  make build
 #+end_src
 
 And install it:
 
 #+begin_src bash
-  make install ENV=bpf-next
+  make install
 #+end_src
 
-If you didn't build an image, run:
+To run the kernel, you need an a userspace filesystem, which you can
+setup with:
 
 #+begin_src bash
-  make image ENV=bpf-next
+  make image
 #+end_src
 
-You can boot the image and the built kernel with:
+You can finally boot the image and the built kernel with:
 
 #+begin_src bash
-  make qemu ENV=bpf-next
+  make qemu
 #+end_src
 
 From inside the virtual machine, you have access to the project's root
 directory in =/lkde=. This is useful if you want to build and test
 other kernels from an architecture different than your host machine.
-
-There are other useful commands, and you could use this framework
-for any project really.
 
 Happy hacking!
