@@ -99,7 +99,7 @@ BINUTILS_VERSION?=2.45
 # Directory of the compiler toolchain
 CC_DIR?=${DEPS_INSTALL_DIR}/${ARCH_GCC}/bin
 # Directory of the debootstrap executable
-DEBOOTSTRAP_DIR?=/usr/sbin
+DEBOOTSTRAP_VERSION?=1.0.141
 # Qemu version
 QEMU_VERSION?=10.0.3
 # Qemu flags
@@ -179,7 +179,7 @@ image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
 	sync
 	@echo -e "#\n# * If you get error \"Structure needs cleaning\", just try again\n#"
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
-	sudo ${DEBOOTSTRAP_DIR}/debootstrap --arch ${ARCH_DEBOOTSTRAP} --include=${IMG_PACKAGES} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
+	sudo ${DEPS_INSTALL_DIR}/bin/debootstrap --arch ${ARCH_DEBOOTSTRAP} --include=${IMG_PACKAGES} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo 'root:root' | chpasswd"
 	sudo cp -a image/. ${IMG_TMP_MOUNT}
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "chown root:root /etc/sudoers"
@@ -244,12 +244,14 @@ git-pull: env # Git pull
 # - gcc
 # - binutils
 # - qemu
+# - debootstrap
+
 
 ${DEPS_INSTALL_DIR}:
 	mkdir -p ${DEPS_INSTALL_DIR}
 	mkdir -p ${DEPS_INSTALL_DIR}/${TARGET_ARCH}
 
-deps: deps-gcc deps-binutils deps-qemu env ## Download and build dependencies
+deps: deps-gcc deps-binutils deps-qemu deps-debootstrap env ## Download and build dependencies
 
 
 ## GCC ---------------------------------------------------------------
@@ -338,6 +340,17 @@ deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_
 	cd ${BINUTILS_BUILD_DIR} && make install
 
 
+## Debootstrap -------------------------------------------------------
+
+${DEPS_SOURCE_DIR}/debootstrap:
+	wget --directory-prefix ${DEPS_SOURCE_DIR} http://deb.debian.org/debian/pool/main/d/debootstrap/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz
+	tar -xf ${DEPS_SOURCE_DIR}/debootstrap-${DEBOOTSTRAP_VERSION} -C ${DEPS_SOURCE_DIR}/
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
+
+deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap-${DEBOOTSTRAP_VERSION} ${DEPS_INSTALL_DIR}
+	ln -s ${DEPS_SOURCE_DIR}/debootstrap/debootstrap ${DEPS_INSTALL_DIR}/bin
+
+
 ## External dependencies ---------------------------------------------
 
 .PHONY: deps-fedora
@@ -394,7 +407,7 @@ settings: # Shows value of variables
 	@echo GCC_MIRROR=${GCC_MIRROR}
 	@echo BINUTILS_VERSION=${BINUTILS_VERSION}
 	@echo CC_DIR=${CC_DIR}
-	@echo DEBOOTSTRAP_DIR=${DEBOOTSTRAP_DIR}
+	@echo DEBOOTSTRAP_VERSION=${DEBOOTSTRAP_VERSION}
 	@echo QEMU_VERSION=${QEMU_VERSION}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}
 	@echo DEPS_EXTERNAL_FEDORA=${DEPS_EXTERNAL_FEDORA}
@@ -408,4 +421,4 @@ help: # Shows help
 	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile | column -t -l 2 | sort
 
 
-## End ---------------------------------------------------------------
+### End --------------------------------------------------------------
