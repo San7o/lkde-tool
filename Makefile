@@ -6,15 +6,38 @@ PWD=${shell pwd}
 include .env-${ENV}
 
 ### Config variables
+# Change the value of these variables to 
 
 ## General
 
-# Target architecture
-ARCH?=amd64
+# System which you are using to build the compiler
+BUILD_ARCH?=x86_64
+# The system where you want to run the resulting compiler
+HOST_ARCH?=x86_64
+# The system for which you want the compiler to generate code
+TARGET_ARCH?=x86_64
 # Name of the kernel image
-KERNEL_NAME?=kernel-${ENV}
+KERNEL_NAME?=kernel-${ENV}-${TARGET_ARCH}
+# Number of processing units to use
+NPROC?=${shell nproc}
 # Compilation flags
-MAKE_FLAGS?=-j${shell nproc}
+MAKE_FLAGS?=-j${NPROC}
+
+## Internal variables
+# Programs may use different names to refer to the same architecture,
+# so we need to do this
+
+ifeq (${TARGET_ARCH},x86_64)
+ARCH_DEBOOTSTRAP?=amd64
+ARCH_LINUX_BUILD_NAME?=x86
+ARCH_QEMU?=x86_64
+ARCH_GCC?=x86_64-pc-linux-gnu
+else
+ARCH_DEBOOTSTRAP?=unknown
+ARCH_LINUX_BUILD_NAME?=unknown
+ARCH_QEMU?=unknown
+ARCH_GCC?=unknown
+endif
 
 ## Directories
 
@@ -23,22 +46,26 @@ WORKTREE?=
 # Directory of the kernel sources
 SOURCE_DIR?=${PWD}/sources/${ENV}/${WORKTREE}
 # Output installation directory
-INSTALL_DIR?=${PWD}/install/${ENV}
+INSTALL_DIR?=${PWD}/install/${ENV}-${TARGET_ARCH}
 # Directory of the kernel config files
 CONFIG_DIR?=${PWD}/config
 # Name of the config file
 CONFIG_NAME?=.config-${ENV}
+# Dependencies source directory
+DEPS_SOURCE_DIR?=${PWD}/deps
+# Dependencies install directory
+DEPS_INSTALL_DIR?=${PWD}/usr
 
 ## Rootfs Image
 
 # Name of the root filesystem image used to boot the kernel
-IMG_NAME?=image-${ENV}.img
+IMG_NAME?=image-${ENV}-${TARGET_ARCH}.img
 # A temporary location where the image will be mounted for modification
 IMG_TMP_MOUNT?=${PWD}/mnt/${IMG_NAME}
 # Filesystem of the root image
 IMG_FS?=ext4
 # Packages that should be installed in the root image
-IMG_PACKAGES?=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux
+IMG_PACKAGES?=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux,sudo
 # User of the root filesystem image
 IMG_USER?=test
 # Password of the user in the root filesystem image
@@ -48,6 +75,14 @@ IMG_SIZE?=10G
 
 ## Executables
 
+# Version of GCC to download
+GCC_VERSION?=15.2.0
+# Where to download gcc
+GCC_MIRROR?=ftp.fu-berlin.de
+# Version of binutils to download
+BINUTILS_VERSION?=2.45
+# Directory of the compiler toolchain
+CC_DIR?=${PWD}/usr/${ARCH_GCC}/bin
 # Directory of the debootstrap executable
 DEBOOTSTRAP_DIR?=/usr/sbin
 # Directory of the qemu executables
@@ -61,15 +96,14 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -m 6G\
             -smp 4
 
-## Internal variables
+## Others
 
-ifeq (${ARCH},amd64)
-ARCH_LINUX_BUILD_NAME=x86
-ARCH_QEMU=x86_64
-else
-ARCH_LINUX_BUILD_NAME=unknown
-ARCH_QEMU=unknown
-endif
+# Flags passed to the kernel build system
+KERNEL_FLAGS?=ARCH=${TARGET_ARCH}\
+							CROSS_COMPILE=${CC_DIR}/${ARCH_GCC}-
+DEPS_FEDORA?=libcap-ng-devel\
+             debootstrap\
+             qemu
 
 all: help
 
@@ -83,24 +117,24 @@ ${CONFIG_DIR}:
 
 .PHONY: configure
 defconfig: ${CONFIG_DIR} env # Generate the default .config file
-	make -C ${SOURCE_DIR} defconfig
+	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} defconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: tinyconfig
 tinyconfig: ${CONFIG_DIR} env # Generate the tinyconfig
-	make -C ${SOURCE_DIR} tinyconfig
+	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} tinyconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: menuconfig
 menuconfig: ${CONFIG_DIR} env # Run menuconfig
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
-	make -C ${SOURCE_DIR} menuconfig
+	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} menuconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: build
 build: env ${CONFIG_DIR}/${CONFIG_NAME} # Build the kernel
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
-	make -C ${SOURCE_DIR} ${MAKE_FLAGS}
+	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} ${MAKE_FLAGS}
 
 .PHONY: ${IMG_TMP_MOUNT}
 ${IMG_TMP_MOUNT}:
@@ -110,13 +144,18 @@ ${IMG_TMP_MOUNT}:
 image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
 	${QEMU_DIR}/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} ${IMG_SIZE}
 	mkfs.${IMG_FS} ${INSTALL_DIR}/${IMG_NAME}
+	@echo -e "#\n# * Sudo in needed to mount the installation image to make modifiations\n#\n"
 	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
 	sync
+	@echo -e "#\n# * If you get error \"Structure needs cleaning\", just try again\n#"
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
-	sudo ${DEBOOTSTRAP_DIR}/debootstrap --arch ${ARCH} --include=${IMG_PACKAGES} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
+	sudo ${DEBOOTSTRAP_DIR}/debootstrap --arch ${ARCH_DEBOOTSTRAP} --include=${IMG_PACKAGES} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo 'root:root' | chpasswd"
 	sudo cp -a image/. ${IMG_TMP_MOUNT}
+	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "chown root:root /etc/sudoers"
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "useradd -m -u 1000 -s /bin/bash ${IMG_USER}"
+	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "groupadd wheel"
+	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "usermod -a -G wheel ${IMG_USER}"
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "chown -R ${IMG_USER}:${IMG_USER} /lkde"
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo '${IMG_USER}:${IMG_PASSWD}' | chpasswd"
 	sudo umount -R ${IMG_TMP_MOUNT}
@@ -142,10 +181,13 @@ qemu: env # Run qemu
 	${QEMU_DIR}/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide ${QEMU_FLAGS}
 
 .PHONY: clean
-clean: env # Clean the build and installation files
+clean: install-clean env # Clean the build and installation files
 	make -C ${SOURCE_DIR} clean
-	if [ "${INSTALL_DIR}" != "" ]; then rm -rf ${INSTALL_DIR}/; fi
 	if [ -d ${IMG_TMP_MOUNT} ]; then rm -r ${IMG_TMP_MOUNT}; fi
+
+.PHONY: clean
+install-clean: env # Clean the installation files
+	if [ "${INSTALL_DIR}" != "" ]; then rm -rf ${INSTALL_DIR}/; fi
 
 .PHONY: distclean
 distclean: env # Clean config files
@@ -182,19 +224,89 @@ pull: env # Git pull
 source-dir: # Output the kernel source directory
 	@echo ${SOURCE_DIR}
 
+## Dependencies
+
+${DEPS_INSTALL_DIR}:
+	mkdir -p ${DEPS_INSTALL_DIR}
+
+GCC_BUILD_DIR=${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}/build
+GCC_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
+	   --disable-multilib\
+	   --with-system-zlib\
+	   --enable-default-pie\
+	   --enable-default-ssp\
+	   --enable-host-pie\
+	   --disable-fixincludes\
+	   --enable-languages=c,m2\
+	   --with-mpfr\
+	   --with-mpc\
+	   --with-gmp\
+		 --target ${ARCH_GCC}
+
+${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}:
+	wget --directory-prefix ${DEPS_SOURCE_DIR}/ https://${GCC_MIRROR}/unix/languages/gcc/releases/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz
+	tar -xf ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}.tar.xz -C ${DEPS_SOURCE_DIR}/
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.xz*
+
+.PHONY: ${GCC_BUILD_DIR}
+${GCC_BUILD_DIR}: ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}
+	mkdir -p ${GCC_BUILD_DIR}
+
+gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install gcc
+	cd ${GCC_BUILD_DIR} && ../configure ${GCC_FLAGS}
+	cd ${GCC_BUILD_DIR} && make -j${NPROC}
+	cd ${GCC_BUILD_DIR} && make install
+
+BINUTILS_BUILD_DIR=${DEPS_SOURCES_DIR}/binutils-${BINUTILS_VERSION}/build
+BINUTILS_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}
+             --sysconfdir=/etc   \
+             --enable-ld=default \
+             --enable-plugins    \
+             --enable-shared     \
+             --disable-werror    \
+             --enable-64-bit-bfd \
+             --enable-new-dtags  \
+             --with-system-zlib  \
+             --enable-default-hash-style=gnu \
+             --target=${ARCH_GCC}
+
+${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}:
+	wget --directory-prefix ${DEPS_SOURCE_DIR} https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz
+	tar -xf ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
+
+${BINUTILS_BUILD_DIR}: ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}
+	mkdir -p ${BINUTILS_BUILD_DIR}
+
+binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BUILD_DIR}${DEPS_INSTALL_DIR} ## Download, compile and install binutils
+	cd ${BINUTILS_BUILD_DIR} && ../configure ${GCC_FLAGS}
+	cd ${BINUTILS_BUILD_DIR} && make -j${NPROC}
+	cd ${BINUTILS_BUILD_DIR} && make install
+
+deps: gcc binutils env ## Download and build dependencies
+
+.PHONY: deps-fedora
+deps-fedora: env ## Install build dependencies in fedora
+	sudo dnf install -y ${DEPS_FEDORA}
+
 .PHONY: settings
 settings: # Shows value of variables
 	@echo -e "\n* General:\n"
 	@echo ENV=${ENV}
-	@echo ARCH=${ARCH}
+	@echo TARGET_ARCH=${TARGET_ARCH}
+	@echo BUILD_ARCH=${BUILD_ARCH}
+	@echo HOST_ARCH=${HOST_ARCH}
 	@echo KERNEL_NAME=${KERNEL_NAME}
-	@echo MAKE_FLAGS=${MAKE_FLAGS}
+	@echo MAKE_FLAGS=\"${MAKE_FLAGS}\"
+	@echo KERNEL_FLAGS=\"${KERNEL_FLAGS}\"
 	@echo -e "\n* Directories:\n"
 	@echo WORKTREE=${WORKTREE}
 	@echo SOURCE_DIR=${SOURCE_DIR}
 	@echo INSTALL_DIR=${INSTALL_DIR}
 	@echo CONFIG_DIR=${CONFIG_DIR}
 	@echo CONFIG_NAME=${CONFIG_NAME}
+	@echo DEPS_SOURCE_DIR=${DEPS_SOURCE_DIR}
+	@echo DEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}
 	@echo -e "\n* Rootfs image:\n"
 	@echo IMG_NAME=${IMG_NAME}
 	@echo IMG_TMP_MOUNT=${IMG_TMP_MOUNT}
@@ -204,10 +316,15 @@ settings: # Shows value of variables
 	@echo IMG_PASSWD=${IMG_PASSWD}
 	@echo IMG_SIZE=${IMG_SIZE}
 	@echo -e "\n* Executables:\n"
-	@echo DEBPPTSTRAP_DIR=${DEBOOTSTRAP_DIR}
+	@echo GCC_VERSION=${GCC_VERSION}
+	@echo GCC_MIRROR=${GCC_MIRROR}
+	@echo BINUTILS_VERSION=${BINUTILS_VERSION}
+	@echo CC_DIR=${CC_DIR}
+	@echo DEBOOTSTRAP_DIR=${DEBOOTSTRAP_DIR}
 	@echo QEMU_DIR=${QEMU_DIR}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}
-
+	@echo -e "\n* Dependencies:\n"
+	@echo DEPS_FEDORA?=${DEPS_FEDORA}
 
 .PHONY: help
 help: # Shows help
