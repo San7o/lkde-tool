@@ -384,7 +384,7 @@ source-dir: # Output the kernel source directory
 .PHONY: settings
 # Please, when you add a new config variable, add an entry here
 settings: # Shows value of variables
-	@echo -e "\nbuild:\n"
+	@echo -e "# build -----------------------------------------------#"
 	@echo ENV=${ENV}
 	@echo BUILD_ARCH=${BUILD_ARCH}
 	@echo HOST_ARCH=${HOST_ARCH}
@@ -393,7 +393,7 @@ settings: # Shows value of variables
 	@echo NPROC=${NPROC}
 	@echo MAKE_FLAGS=\"${MAKE_FLAGS}\"
 	@echo KERNEL_FLAGS=\"${KERNEL_FLAGS}\"
-	@echo -e "\ndirectories:\n"
+	@echo -e "# directories -----------------------------------------#"
 	@echo WORKTREE=${WORKTREE}
 	@echo SOURCE_DIR=${SOURCE_DIR}
 	@echo INSTALL_DIR=${INSTALL_DIR}
@@ -401,7 +401,7 @@ settings: # Shows value of variables
 	@echo CONFIG_NAME=${CONFIG_NAME}
 	@echo DEPS_SOURCE_DIR=${DEPS_SOURCE_DIR}
 	@echo DEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}
-	@echo -e "\nrootfs image:\n"
+	@echo -e "# rootfs image ----------------------------------------#"
 	@echo IMG_NAME=${IMG_NAME}
 	@echo IMG_DIR=${IMG_DIR}
 	@echo IMG_TMP_MOUNT=${IMG_TMP_MOUNT}
@@ -410,7 +410,7 @@ settings: # Shows value of variables
 	@echo IMG_USER=${IMG_USER}
 	@echo IMG_PASSWD=${IMG_PASSWD}
 	@echo IMG_SIZE=${IMG_SIZE}
-	@echo -e "\ndependencies:\n"
+	@echo -e "# dependencies ----------------------------------------#"
 	@echo GCC_VERSION=${GCC_VERSION}
 	@echo GCC_MIRROR=${GCC_MIRROR}
 	@echo BINUTILS_VERSION=${BINUTILS_VERSION}
