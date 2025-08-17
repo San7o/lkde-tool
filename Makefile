@@ -256,18 +256,18 @@ deps: deps-gcc deps-binutils deps-qemu deps-debootstrap env ## Download and buil
 ## GCC ---------------------------------------------------------------
 
 GCC_BUILD_DIR=${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}/build
-GCC_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
-	   --disable-multilib      \
-	   --with-system-zlib      \
-	   --enable-default-pie    \
-	   --enable-default-ssp    \
-	   --enable-host-pie       \
-	   --disable-fixincludes   \
-	   --enable-languages=c,m2 \
-	   --with-mpfr             \
-	   --with-mpc              \
-	   --with-gmp              \
-		 --target ${ARCH_GCC}
+GCC_BUILD_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
+	             --disable-multilib      \
+	             --with-system-zlib      \
+	             --enable-default-pie    \
+	             --enable-default-ssp    \
+	             --enable-host-pie       \
+	             --disable-fixincludes   \
+	             --enable-languages=c,m2 \
+	             --with-mpfr             \
+	             --with-mpc              \
+	             --with-gmp              \
+               --target ${ARCH_GCC}
 
 ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}:
 	wget --directory-prefix ${DEPS_SOURCE_DIR}/ https://${GCC_MIRROR}/unix/languages/gcc/releases/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz
@@ -279,7 +279,7 @@ ${GCC_BUILD_DIR}: ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}
 	mkdir -p ${GCC_BUILD_DIR}
 
 deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install gcc
-	cd ${GCC_BUILD_DIR} && ../configure ${GCC_FLAGS}
+	cd ${GCC_BUILD_DIR} && ../configure ${GCC_BUILD_FLAGS}
 	cd ${GCC_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${GCC_BUILD_DIR} && make install
 
@@ -287,17 +287,17 @@ deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INST
 ## Binutils ----------------------------------------------------------
 
 BINUTILS_BUILD_DIR=${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}/build
-BINUTILS_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
-             --sysconfdir=/etc   \
-             --enable-ld=default \
-             --enable-plugins    \
-             --enable-shared     \
-             --disable-werror    \
-             --enable-64-bit-bfd \
-             --enable-new-dtags  \
-             --with-system-zlib  \
-             --enable-default-hash-style=gnu \
-             --target=${ARCH_GCC}
+BINUTILS_BUILD_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
+                  --sysconfdir=/etc   \
+                  --enable-ld=default \
+                  --enable-plugins    \
+                  --enable-shared     \
+                  --disable-werror    \
+                  --enable-64-bit-bfd \
+                  --enable-new-dtags  \
+                  --with-system-zlib  \
+                  --enable-default-hash-style=gnu \
+                  --target=${ARCH_GCC}
 
 ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}:
 	wget --directory-prefix ${DEPS_SOURCE_DIR} https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz
@@ -308,7 +308,7 @@ ${BINUTILS_BUILD_DIR}: ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}
 	mkdir -p ${BINUTILS_BUILD_DIR}
 
 deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install binutils
-	cd ${BINUTILS_BUILD_DIR} && ../configure ${GCC_FLAGS}
+	cd ${BINUTILS_BUILD_DIR} && ../configure ${BINUTILS_BUILD_FLAGS}
 	cd ${BINUTILS_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${BINUTILS_BUILD_DIR} && make install
 
@@ -316,13 +316,13 @@ deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BU
 ## Qemu --------------------------------------------------------------
 
 QEMU_BUILD_DIR=${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}/build
-QEMU_FLAGS?=../configure --prefix=${DEPS_INSTALL_DIR} \
-             --sysconfdir=/etc           \
-             --localstatedir=/var        \
-             --target-list=${ARCH_QEMU}  \
-             --audio-drv-list=alsa       \
-             --disable-pa                \
-             --enable-slirp
+QEMU_BUILD_FLAGS?=../configure --prefix=${DEPS_INSTALL_DIR} \
+                  --sysconfdir=/etc           \
+                  --localstatedir=/var        \
+                  --target-list=${ARCH_QEMU}-softmmu  \
+                  --audio-drv-list=jack       \
+                  --disable-pa                \
+                  --enable-slirp
 
 ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}:
 	wget --directory-prefix ${DEPS_SOURCE_DIR} https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz
@@ -334,7 +334,7 @@ ${QEMU_BUILD_DIR}: ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}
 	mkdir -p ${QEMU_BUILD_DIR}
 
 deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_INSTALL_DIR}
-	cd ${QEMU_BUILD_DIR} && ../configure ${QEMU_FLAGS}
+	cd ${QEMU_BUILD_DIR} && ../configure ${QEMU_BUILD_FLAGS}
 	cd ${QEMU_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${QEMU_BUILD_DIR} && make install
 

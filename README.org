@@ -9,8 +9,8 @@ mind, but it is easily customizable to develop anything else (NetBSD
 support is already planned).
 
 LKDE is very simple and easy to hack, making it both powerful and
-fun. Please read this document until the end to understand how this
-works.
+fun. Since it is so light, you could simply include this directory
+under other projects and enhance your workflow with LKDE.
 
 ** Environments
 
@@ -100,6 +100,10 @@ environment may import another one with the =include= keyword, so you
 can have some shared settings between different environments.
 
 ** Make commands and dependencies
+
+Another important idea of LKDE is to provide a full workflow for
+kernel development. Ideally, you would clone this repository and be
+good to go. The setup should be easy, convenient and hackable.
 
 This project provides a series of make commands to aid your workflow,
 while honoring your environment settings. Run =make help= to get a
