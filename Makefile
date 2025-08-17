@@ -74,12 +74,14 @@ DEPS_INSTALL_DIR?=${PWD}/usr
 
 # Name of the root filesystem image used to boot the kernel
 IMG_NAME?=image-${ENV}-${TARGET_ARCH}.img
+# Location of the contents of the image that should be copied
+IMG_DIR?=${PWD}/image
 # A temporary location where the image will be mounted for modification
 IMG_TMP_MOUNT?=${PWD}/mnt/${IMG_NAME}
 # Filesystem of the root image
 IMG_FS?=ext4
 # Packages that should be installed in the root image
-IMG_PACKAGES?=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux,sudo
+IMG_PACKAGES?=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux,sudo,openssh-server,dhcpcd
 # User of the root filesystem image
 IMG_USER?=test
 # Password of the user in the root filesystem image
@@ -97,19 +99,24 @@ GCC_MIRROR?=ftp.fu-berlin.de
 # Version of binutils to download
 BINUTILS_VERSION?=2.45
 # Directory of the compiler toolchain
-CC_DIR?=${DEPS_INSTALL_DIR}/${ARCH_GCC}/bin
+CC_DIR?=${DEPS_INSTALL_DIR}/${TARGET_ARCH}/bin
 # Directory of the debootstrap executable
 DEBOOTSTRAP_VERSION?=1.0.141
 # Qemu version
 QEMU_VERSION?=10.0.3
+# SSH port for connecting to the virtual machine
+QEMU_SSH_PORT?=2222
+# Virtual Machine memory
+QEMU_MEM?=6G
+# Number of sockets
+QEMU_SOCKETS?=4
 # Qemu flags
 QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             --enable-kvm\
             -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0\
-            -netdev user,id=net0 \
-            -device virtio-net-pci,netdev=net0\
-            -m 6G\
-            -smp 4
+            -nic user,hostfwd=tcp::${QEMU_SSH_PORT}-:22 \
+            -m ${QEMU_MEM}\
+            -smp ${QEMU_SOCKETS}
 # Other dependencies
 DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget
 
@@ -184,7 +191,7 @@ image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
 	sudo ${DEPS_INSTALL_DIR}/bin/debootstrap --arch ${ARCH_DEBOOTSTRAP} --include=${IMG_PACKAGES} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "echo 'root:root' | chpasswd"
-	sudo cp -a image/. ${IMG_TMP_MOUNT}
+	sudo cp -a ${IMG_DIR}/. ${IMG_TMP_MOUNT}
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "chown root:root /etc/sudoers"
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "useradd -m -u 1000 -s /bin/bash ${IMG_USER}"
 	sudo chroot ${IMG_TMP_MOUNT} /bin/bash -c "groupadd wheel"
@@ -287,17 +294,18 @@ deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INST
 ## Binutils ----------------------------------------------------------
 
 BINUTILS_BUILD_DIR=${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}/build
-BINUTILS_BUILD_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
-                  --sysconfdir=/etc   \
-                  --enable-ld=default \
-                  --enable-plugins    \
-                  --enable-shared     \
-                  --disable-werror    \
-                  --enable-64-bit-bfd \
-                  --enable-new-dtags  \
-                  --with-system-zlib  \
-                  --enable-default-hash-style=gnu \
-                  --target=${ARCH_GCC}
+BINUTILS_BUILD_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
+                    --sysconfdir=${IMG_DIR}/etc \
+                    --enable-ld=default \
+                    --enable-plugins    \
+                    --enable-shared     \
+                    --disable-werror    \
+                    --enable-64-bit-bfd \
+                    --enable-new-dtags  \
+                    --with-system-zlib  \
+                    --enable-default-hash-style=gnu \
+                    --target=${ARCH_GCC} \
+                    --program-prefix=${ARCH_GCC}-
 
 ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}:
 	wget --directory-prefix ${DEPS_SOURCE_DIR} https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz
@@ -316,7 +324,7 @@ deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BU
 ## Qemu --------------------------------------------------------------
 
 QEMU_BUILD_DIR=${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}/build
-QEMU_BUILD_FLAGS?=../configure --prefix=${DEPS_INSTALL_DIR} \
+QEMU_BUILD_FLAGS?=--prefix=${DEPS_INSTALL_DIR} \
                   --sysconfdir=/etc           \
                   --localstatedir=/var        \
                   --target-list=${ARCH_QEMU}-softmmu  \
@@ -395,6 +403,7 @@ settings: # Shows value of variables
 	@echo DEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}
 	@echo -e "\nrootfs image:\n"
 	@echo IMG_NAME=${IMG_NAME}
+	@echo IMG_DIR=${IMG_DIR}
 	@echo IMG_TMP_MOUNT=${IMG_TMP_MOUNT}
 	@echo IMG_FS=${IMG_FS}
 	@echo IMG_PACKAGES=${IMG_PACKAGES}
@@ -408,7 +417,10 @@ settings: # Shows value of variables
 	@echo CC_DIR=${CC_DIR}
 	@echo DEBOOTSTRAP_VERSION=${DEBOOTSTRAP_VERSION}
 	@echo QEMU_VERSION=${QEMU_VERSION}
+	@echo QEMU_SSH_PORT=${QEMU_SSH_PORT}
+	@echo QEMU_MEM=${QEMU_MEM}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}
+	@echo QEMU_SOCKETS=${QEMU_SOCKETS}
 	@echo DEPS_EXTERNAL_FEDORA=${DEPS_EXTERNAL_FEDORA}
 
 .PHONY: help

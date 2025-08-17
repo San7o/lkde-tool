@@ -2,29 +2,32 @@
 
 * LKDE
 
-This repository contains my personal Linux Kernel Development
-Environment. This is my setup to keep up, develop and test kernel
-patches for various architectures. This project was born with Linux in
-mind, but it is easily customizable to develop anything else (NetBSD
-support is already planned).
+This repository contains a Linux Kernel Development Environment (LKDE)
+useful to develop and test kernel patches and applications in multiple
+kernel branches, trees, architectures and configurations.
 
-LKDE is very simple and easy to hack, making it both powerful and
-fun. Since it is so light, you could simply include this directory
-under other projects and enhance your workflow with LKDE.
+LKDE is designed to be simple and easy to customize and configure,
+making it both powerful and embeddable. You can integrate LKDE with
+other projects to enhance the development workflow and testing
+infastructure with more control on the operating system's
+configuration.
+
+This project was born with Linux in mind, but it is easily
+customizable to develop on a broader set of applications (NetBSD
+support is already planned).
 
 ** Environments
 
-The core idea behind the LKDE workflow is the =environment=. An
+The core idea behind the LKDE framework is the =environment=. An
 environment holds all the settings of your development setup, such as
 the target architecture, the compiler version, the source tree,
 etc. Environments allow you to perform the same development workflow
 regardless of the settings: it represents a central place to store
-your current setup, and enables you to switch between one environment
-and the other with ease.
+your current setup, enabling you to switch between one environment and
+the other with ease.
 
-You can get a list of the most useful settings and their values in
-this environment with =make settings=, or simply by reading the root
-makefile:
+You can get a list of settings and their values with =make settings=,
+a description is provided in the root Makefile:
 
 #+begin_src bash
 $ make settings
@@ -73,14 +76,14 @@ DEPS_EXTERNAL_FEDORA=libcap-ng-devel wget
 #+end_src
 
 You can set the value of these variables in an environment file named
-=.env-NAME= where =NAME= is the name of your environmnet.
+=.env-NAME= where =NAME= is the name of your environment.
 
 #+begin_src
   touch .env-bpf-next
-  vim .env-bpf-next # Add variables as you need
+  echo TARGET_ARCH=x86_64 >> .env-bpf-next  # Add variables as you need
 #+end_src
 
-Then, you can specify which environment to use by setting or exporting
+You can specify which environment to use by setting or exporting
 the =ENV= variable with the name of the environment. For example:
 
 #+begin_src
@@ -95,9 +98,9 @@ export ENV=bpf-next
 make build
 #+end_src
 
-Obviously you can have any number of environments. Moreover, an
-environment may import another one with the =include= keyword, so you
-can have some shared settings between different environments.
+You can have any number of environments. Moreover, an environment may
+import another one with the =include= keyword in order to have some
+shared settings between different environments.
 
 ** Make commands and dependencies
 
@@ -146,11 +149,11 @@ umount           Unmount the image
 LKDE should download and compile all the dependencies you need to work
 with the linux kernel (cross-compilers, qemu...). The only
 requirements to use LKDE are gcc + binutils, wget and the standard
-unix tools.
+UNIX tools.
 
 ** lkde.sh
 
-To interact with LKDE, you can use the =lkde.sh= script.
+To interact with LKDE, you can use the =lkde.sh= script:
 
 #+begin_src
 $ ./lkde.sh help
@@ -177,7 +180,7 @@ $ _
 #+end_src
 
 This will also set the script to your path so you can call it from
-anywhere. You can now run any command throught the =lkde.sh= script as
+anywhere. You can now run any command through the =lkde.sh= script as
 if you were in the LKDE root directory:
 
 #+begin_src
@@ -193,7 +196,7 @@ export it.
 
 ** Emacs integration
 
-You can easily use LKDE on emacs by loading =lkde.el=, which is
+You can easily use LKDE on Emacs by loading =lkde.el=, which is
 similar to =lkde.sh=.
 
 You can set the LKDE directory with =M-x lkde-set-base-dir= and the
@@ -204,7 +207,7 @@ command with the default directory set to the environment's
 
 ** Directory Structure
 
-In order to intergrate multiple environments, this project defaults to
+In order to integrate multiple environments, this project defaults to
 a particular directory structure, which is summarized below:
 
 #+begin_src
@@ -228,13 +231,13 @@ for example =sources/bpf-next=, =sources/linux-next= or
 bzImage or a qemu image, the output will be placed in a dedicated
 directory in =install/$ENV-$TARGET_ARCH= which will be created if not
 present. =config/= contains the kernel configuration files, usually
-named =.config-ENV-NAME=. All the content in =image/= will be copied
+named =.config-$ENV=. All the content in =image/= will be copied
 to the root filesystem of the image.
 
 Since everything is fully customizable, you can choose to structure
 your workflow differently by specifying where things are and where
 things should be, or the naming conventions, though the variables in
-the =.env= file.
+the =.env-NAME= file.
 
 ** Linux Workflow
 
@@ -296,6 +299,14 @@ You can finally boot the image and the built kernel with:
 From inside the virtual machine, you have access to the project's root
 directory in =/lkde=. This is useful if you want to build and test
 other kernels from an architecture different than your host machine.
+
+By default, you can also connect to the virtual machine via ssh at
+port 2222:
+
+#+begin_src
+  ssh -p 2222 test@localhost
+#+end_src
+
 
 If you wanted to work on a different tree, say Linux 6.16, or a
 different architecture, you would only change the environment file

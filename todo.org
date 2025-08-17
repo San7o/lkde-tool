@@ -2,5 +2,4 @@
 
 * Future work
 
-** TODO Make the qemu image connect to the internet
 ** TODO Make the qemu image accessible through ssh
