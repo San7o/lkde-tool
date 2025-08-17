@@ -8,12 +8,13 @@ patches for various architectures. This project was born with Linux in
 mind, but it is easily customizable to develop anything else (NetBSD
 support is already planned).
 
-LKDE is very simple and easy to hack with compared to similar
-projects, making it both powerful and fun.
+LKDE is very simple and easy to hack, making it both powerful and
+fun. Please read this document until the end to understand how this
+works.
 
 ** Environments
 
-The core idea of the LKDE workflow is the =environment=. An
+The core idea behind the LKDE workflow is the =environment=. An
 environment holds all the settings of your development setup, such as
 the target architecture, the compiler version, the source tree,
 etc. Environments allow you to perform the same development workflow
@@ -21,8 +22,9 @@ regardless of the settings: it represents a central place to store
 your current setup, and enables you to switch between one environment
 and the other with ease.
 
-You can get a list of the most useful settings and their values with
-=make settings=, or simply by reading the root makefile:
+You can get a list of the most useful settings and their values in
+this environment with =make settings=, or simply by reading the root
+makefile:
 
 #+begin_src bash
 $ make settings
@@ -244,10 +246,10 @@ And place the sources in =sources/bpf-next=. If you don't change
 anything in the =.env= file, you will use the default settings and
 conventions. x86_64 is the default architecture.
 
-First, you should build your tools for the target architecture, like
-gcc, binutils and qemu.  You can run =make deps= do download and
-compile everything. The sources will be placed in =deps/= and
-installed in =usr/= or =usr/$TARGET_ARCH=:
+First, you should build your tools to work with the target
+architecture, like gcc, binutils and qemu.  You can run =make deps= do
+download and compile everything. The sources will be placed in =deps/=
+and installed in =usr/= or =usr/$TARGET_ARCH=:
 
 #+begin_src
   make deps
@@ -274,8 +276,8 @@ And install it:
   make install
 #+end_src
 
-To run the kernel, you need an a userspace filesystem, which you can
-setup with:
+To run the kernel you first need an a userspace filesystem, which you
+can setup with:
 
 #+begin_src bash
   make image
@@ -290,5 +292,9 @@ You can finally boot the image and the built kernel with:
 From inside the virtual machine, you have access to the project's root
 directory in =/lkde=. This is useful if you want to build and test
 other kernels from an architecture different than your host machine.
+
+If you wanted to work on a different tree, say Linux 6.16, or a
+different architecture, you would only change the environment file
+and use the same exact commands.
 
 Happy hacking!
