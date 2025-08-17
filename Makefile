@@ -56,8 +56,10 @@ endif
 
 # Git worktree
 WORKTREE?=
+# Name of the directory with the kernel sources
+KERNEL_SOURCE?=${ENV}
 # Directory of the kernel sources
-SOURCE_DIR?=${PWD}/sources/${ENV}/${WORKTREE}
+SOURCE_DIR?=${PWD}/sources/${KERNEL_SOURCE}/${WORKTREE}
 # Output installation directory
 INSTALL_DIR?=${PWD}/install/${ENV}-${TARGET_ARCH}
 # Directory of the kernel config files
@@ -119,7 +121,10 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -smp ${QEMU_SOCKETS}
 # Other dependencies
 DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget
-
+# HTTP kernel sources, for example https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
+KERNEL_SOURCE_HTTP?=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
+# Git kernel sources. Use either HTTP or git.
+KERNEL_SOURCE_GIT?= #https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/
 
 ### Commands ---------------------------------------------------------
 
@@ -259,6 +264,23 @@ ${DEPS_INSTALL_DIR}:
 
 deps: deps-gcc deps-binutils deps-qemu deps-debootstrap env ## Download and build dependencies
 
+${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}:
+	mkdir -p ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
+
+${SOURCE_DIR}: ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
+ifneq (${KERNEL_SOURCE_HTTP},"")
+	wget ${KERNEL_SOURCE_HTTP} -O ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz
+	tar -xf ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz -C ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/ --strip-components 1
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
+	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE} ${SOURCE_DIR}
+else ifneq (${KERNEL_SOURCE_GIT},"")
+	git clone ${KERNEL_SOURCE_GIT} ${SOURCE_DIR}
+else
+	@echo "Neither KERNEL_SOURCE_HTTP nor KERNEL_SOURCE_GIT were specified"
+endif
+
+download: ${SOURCE_DIR} # Download kernel sources from HTTP or GIT
+
 
 ## GCC ---------------------------------------------------------------
 
@@ -395,6 +417,7 @@ settings: # Shows value of variables
 	@echo KERNEL_FLAGS=\"${KERNEL_FLAGS}\"
 	@echo -e "# directories -----------------------------------------#"
 	@echo WORKTREE=${WORKTREE}
+	@echo KERNEL_SOURCE=${KERNEL_SOURCE}
 	@echo SOURCE_DIR=${SOURCE_DIR}
 	@echo INSTALL_DIR=${INSTALL_DIR}
 	@echo CONFIG_DIR=${CONFIG_DIR}
@@ -422,6 +445,8 @@ settings: # Shows value of variables
 	@echo QEMU_SOCKETS=${QEMU_SOCKETS}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}
 	@echo DEPS_EXTERNAL_FEDORA=${DEPS_EXTERNAL_FEDORA}
+	@echo KERNEL_SOURCE_HTTP=${KERNEL_SOURCE_HTTP}
+	@echo KERNEL_SOURCE_GIT=${KERNEL_SOURCE_GIT}
 
 .PHONY: help
 help: # Shows help

@@ -1,10 +1,10 @@
-#+startup: indent enable
 
 * LKDE
 
-This repository contains a Linux Kernel Development Environment (LKDE)
-useful to develop and test kernel patches and applications in multiple
-kernel branches, trees, architectures and configurations.
+This repository contains the Linux Kernel Development Environment
+(LKDE), an useful tool to develop and test kernel patches and
+applications in multiple kernel branches, trees, architectures and
+configurations.
 
 LKDE is designed to be simple and easy to customize and configure,
 making it both powerful and embeddable. You can integrate LKDE with
@@ -12,13 +12,13 @@ other projects to enhance the development workflow and testing
 infastructure with more control over the operating system's
 configuration.
 
-This project was born with Linux in mind, but it is easily
-customizable to develop on a broader set of applications (NetBSD
-support is already planned).
+Originally conceived for Linux, LKDE is built with adaptability in
+mind. Plans are underway to extend support to other platforms,
+including NetBSD.
 
 ** Environments
 
-The core idea behind the LKDE framework is the =environment=. An
+At the heart of LKDE lies the concept of the =environment=. An
 environment holds all the settings of your development setup, such as
 the target architecture, the compiler version, the source tree,
 etc. Environments allow you to perform the same development workflow
@@ -26,61 +26,62 @@ regardless of the settings: they represent a central place to store
 your development state, enabling you to switch between one environment
 and the other with ease.
 
-You can get a list of settings and their values with =make settings=.
-a description is provided in the root Makefile.
+To inspect the current settings of your environment, run:
 
 #+begin_src bash
-  $ make settings
-  # build -----------------------------------------------#
-  ENV=linux-6.16
-  BUILD_ARCH=x86_64
-  HOST_ARCH=x86_64
-  TARGET_ARCH=x86_64
-  KERNEL_NAME=kernel-linux-6.16-x86_64
-  NPROC=4
-  MAKE_FLAGS="-j4"
-  KERNEL_FLAGS="ARCH=x86_64 CROSS_COMPILE=/home/santo/projects/LKDE/usr/x86_64/bin/x86_64-pc-linux-gnu-"
-  # directories -----------------------------------------#
-  WORKTREE=
-  SOURCE_DIR=/home/santo/projects/LKDE/sources/linux-6.16/
-  INSTALL_DIR=/home/santo/projects/LKDE/install/linux-6.16-x86_64
-  CONFIG_DIR=/home/santo/projects/LKDE/config
-  CONFIG_NAME=.config-linux-6.16
-  DEPS_SOURCE_DIR=/home/santo/projects/LKDE/deps
-  DEPS_INSTALL_DIR=/home/santo/projects/LKDE/usr
-  # rootfs image ----------------------------------------#
-  IMG_NAME=image-linux-6.16-x86_64.img
-  IMG_DIR=/home/santo/projects/LKDE/image
-  IMG_TMP_MOUNT=/home/santo/projects/LKDE/mnt/image-linux-6.16-x86_64.img
-  IMG_FS=ext4
-  IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux,sudo,openssh-server,dhcpcd
-  IMG_USER=test
-  IMG_PASSWD=test
-  IMG_SIZE=10G
-  # dependencies ----------------------------------------#
-  GCC_VERSION=15.2.0
-  GCC_MIRROR=ftp.fu-berlin.de
-  BINUTILS_VERSION=2.45
-  CC_DIR=/home/santo/projects/LKDE/usr/x86_64/bin
-  DEBOOTSTRAP_VERSION=1.0.141
-  QEMU_VERSION=10.0.3
-  QEMU_SSH_PORT=2222
-  QEMU_MEM=6G
-  QEMU_SOCKETS=4
-  QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -nic user,hostfwd=tcp::2222-:22 -m 6G -smp 4
-  DEPS_EXTERNAL_FEDORA=libcap-ng-devel wget
+$ make settings
+# build -----------------------------------------------#
+ENV=linux
+BUILD_ARCH=x86_64
+HOST_ARCH=x86_64
+TARGET_ARCH=x86_64
+KERNEL_NAME=kernel-linux-x86_64
+NPROC=4
+MAKE_FLAGS="-j4"
+KERNEL_FLAGS="ARCH=x86_64 CROSS_COMPILE=/home/santo/projects/LKDE/usr/x86_64/bin/x86_64-pc-linux-gnu-"
+# directories -----------------------------------------#
+WORKTREE=
+KERNEL_SOURCE=linux
+SOURCE_DIR=/home/santo/projects/LKDE/sources/linux/
+INSTALL_DIR=/home/santo/projects/LKDE/install/linux-x86_64
+CONFIG_DIR=/home/santo/projects/LKDE/config
+CONFIG_NAME=.config-linux
+DEPS_SOURCE_DIR=/home/santo/projects/LKDE/deps
+DEPS_INSTALL_DIR=/home/santo/projects/LKDE/usr
+# rootfs image ----------------------------------------#
+IMG_NAME=image-linux-x86_64.img
+IMG_DIR=/home/santo/projects/LKDE/image
+IMG_TMP_MOUNT=/home/santo/projects/LKDE/mnt/image-linux-x86_64.img
+IMG_FS=ext4
+IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux,sudo,openssh-server,dhcpcd
+IMG_USER=test
+IMG_PASSWD=test
+IMG_SIZE=10G
+# dependencies ----------------------------------------#
+GCC_VERSION=15.2.0
+GCC_MIRROR=ftp.fu-berlin.de
+BINUTILS_VERSION=2.45
+CC_DIR=/home/santo/projects/LKDE/usr/x86_64/bin
+DEBOOTSTRAP_VERSION=1.0.141
+QEMU_VERSION=10.0.3
+QEMU_SSH_PORT=2222
+QEMU_MEM=6G
+QEMU_SOCKETS=4
+QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -nic user,hostfwd=tcp::2222-:22 -m 6G -smp 4
+DEPS_EXTERNAL_FEDORA=libcap-ng-devel wget
+KERNEL_SOURCE_HTTP=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
+KERNEL_SOURCE_GIT=
 #+end_src
 
-You can set the value of these variables in an environment file named
-=.env-NAME= where =NAME= is the name of your environment.
+You may define an environment by creating a file named =.env-NAME=,
+where NAME represents the identity of your chosen environment:
 
 #+begin_src
   touch .env-bpf-next
   echo TARGET_ARCH=x86_64 >> .env-bpf-next  # Add variables as you need
 #+end_src
 
-You can specify which environment to use by setting or exporting
-the =ENV= variable with the name of the environment. For example:
+Select your working environment by setting the ENV variable:
 
 #+begin_src
 make build ENV=bpf-next
@@ -122,6 +123,7 @@ deps             Download and build dependencies
 deps-fedora      Install build dependencies in fedora
 deps-gcc         Download, compile and install gcc
 distclean        Clean config files
+download         Download kernel sources from HTTP or GIT
 env              Print the ENV value
 git-diff         Git diff local
 git-diff-origin  Git diff origin
@@ -237,19 +239,31 @@ the =.env-NAME= file.
 
 ** Linux Workflow
 
-After you downloaded some Linux sources, for example the =bpf-next=
-tree, you can create the =bpf-next= environment.
+We will now setup LKDE for working with linux 6.16. Let's first create
+a new environment called =linux-6.16=:
 
 #+begin_src bash
-  touch .env-bpf-next
-  export ENV=bpf-next
+  touch .env-linux-6.16
+  export ENV=linux-6.16
 #+end_src
 
-And place the sources in =sources/bpf-next=. If you don't change
-anything in the =.env= file, you will use the default settings and
-conventions. x86_64 is the default architecture.
+If we want to use LKDE to download the sources, we need to set either
+=KERNEL_SOURCE_HTTP= or =KERNEL_SOURCE_GIT= in the environment:
 
-First, you should build your tools to work with the target
+#+begin_src
+  echo KERNEL_SOURCE_HTTP?=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz > .env-linux-6.16
+#+end_src
+
+We will use the default settings and conventions on x86_64
+(default). Let's download the sources via:
+
+#+begin_src
+  make download
+#+end_src
+
+The sources will be placed in =sources/linux-6.16=.
+
+Next, you should build your tools to work with the target
 architecture, like gcc, binutils and qemu.  You can run =make deps= do
 download and compile everything. The sources will be placed in =deps/=
 and installed in =usr/= or =usr/$TARGET_ARCH=:
@@ -263,17 +277,18 @@ options like:
 
 #+begin_src bash
   make defconfig
+  # or
   make menuconfig
 #+end_src
 
-This will create the file =config/.env-bpf-next= with your
+This will create the file =config/.env-linux-6.16= with your
 configuration. You can build the kernel using this configuration with:
 
 #+begin_src bash
   make build
 #+end_src
 
-And install it:
+And install it in =install/linux-6.16-x86_64=:
 
 #+begin_src bash
   make install
@@ -310,11 +325,11 @@ and use the same exact commands.
 
 Happy hacking!
 
-
 ** Future plans
 
 LKDE could be used to bootstrap a fully-customizable kubernetes
-cluster for testing purposes.
+cluster for testing purposes. It could also be fully automated for CI
+workflows.
 
 ** License
 
