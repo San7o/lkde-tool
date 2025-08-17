@@ -1,17 +1,25 @@
-#  * LKDE
+# --------------------------------------------------------------------
+#
+#  LKDE
 #  by Giovanni Santini
+#
+# --------------------------------------------------------------------
 
-ENV?=linux
 PWD=${shell pwd}
+
+# Environment selected
+ENV?=linux
+# Include the environment
 include .env-${ENV}
 
-### Config variables
-# Change the value of these variables to 
+### Config variables -------------------------------------------------
+# Change the following variables as you requre
 
-## General
+
+## Build
 
 # System which you are using to build the compiler
-BUILD_ARCH?=x86_64
+BUILD_ARCH?=${shell arch}
 # The system where you want to run the resulting compiler
 HOST_ARCH?=x86_64
 # The system for which you want the compiler to generate code
@@ -20,10 +28,14 @@ TARGET_ARCH?=x86_64
 KERNEL_NAME?=kernel-${ENV}-${TARGET_ARCH}
 # Number of processing units to use
 NPROC?=${shell nproc}
-# Compilation flags
+# General compilation flags
 MAKE_FLAGS?=-j${NPROC}
+# Flags passed to the kernel build system
+KERNEL_FLAGS?=ARCH=${TARGET_ARCH}\
+							CROSS_COMPILE=${CC_DIR}/${ARCH_GCC}-
 
-## Internal variables
+
+## Internal architecture variables
 # Programs may use different names to refer to the same architecture,
 # so we need to do this
 
@@ -38,6 +50,7 @@ ARCH_LINUX_BUILD_NAME?=unknown
 ARCH_QEMU?=unknown
 ARCH_GCC?=unknown
 endif
+
 
 ## Directories
 
@@ -56,6 +69,7 @@ DEPS_SOURCE_DIR?=${PWD}/deps
 # Dependencies install directory
 DEPS_INSTALL_DIR?=${PWD}/usr
 
+
 ## Rootfs Image
 
 # Name of the root filesystem image used to boot the kernel
@@ -73,7 +87,8 @@ IMG_PASSWD?=test
 # Size of the root filesystem image
 IMG_SIZE?=10G
 
-## Executables
+
+## Dependencies
 
 # Version of GCC to download
 GCC_VERSION?=15.2.0
@@ -82,11 +97,11 @@ GCC_MIRROR?=ftp.fu-berlin.de
 # Version of binutils to download
 BINUTILS_VERSION?=2.45
 # Directory of the compiler toolchain
-CC_DIR?=${PWD}/usr/${ARCH_GCC}/bin
+CC_DIR?=${DEPS_INSTALL_DIR}/${ARCH_GCC}/bin
 # Directory of the debootstrap executable
 DEBOOTSTRAP_DIR?=/usr/sbin
-# Directory of the qemu executables
-QEMU_DIR?=/usr/bin
+# Qemu version
+QEMU_VERSION?=10.0.3
 # Qemu flags
 QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             --enable-kvm\
@@ -95,21 +110,15 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -device virtio-net-pci,netdev=net0\
             -m 6G\
             -smp 4
+# Other dependencies
+DEPS_EXTERNAL_FEDORA?=libcap-ng-devel\
+                      debootstrap
 
-## Others
 
-# Flags passed to the kernel build system
-KERNEL_FLAGS?=ARCH=${TARGET_ARCH}\
-							CROSS_COMPILE=${CC_DIR}/${ARCH_GCC}-
-DEPS_FEDORA?=libcap-ng-devel\
-             debootstrap\
-             qemu
+### Commands ---------------------------------------------------------
 
-all: help
 
-.PHONY: env
-env: # Print the ENV value
-	@echo Using ENV=${ENV}
+## Config dir
 
 .PHONY: ${CONFIG_DIR}
 ${CONFIG_DIR}:
@@ -131,6 +140,10 @@ menuconfig: ${CONFIG_DIR} env # Run menuconfig
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} menuconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
+
+## Building
+
+
 .PHONY: build
 build: env ${CONFIG_DIR}/${CONFIG_NAME} # Build the kernel
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
@@ -142,7 +155,7 @@ ${IMG_TMP_MOUNT}:
 
 .PHONY: image
 image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
-	${QEMU_DIR}/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} ${IMG_SIZE}
+	${DEPS_INSTALL_DIR}/bin/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} ${IMG_SIZE}
 	mkfs.${IMG_FS} ${INSTALL_DIR}/${IMG_NAME}
 	@echo -e "#\n# * Sudo in needed to mount the installation image to make modifiations\n#\n"
 	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
@@ -178,7 +191,7 @@ install: env ${INSTALL_DIR} # Copy the image to the install directory
 
 .PHONY: qemu
 qemu: env # Run qemu
-	${QEMU_DIR}/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide ${QEMU_FLAGS}
+	${DEPS_INSTALL_DIR}/bin/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide ${QEMU_FLAGS}
 
 .PHONY: clean
 clean: install-clean env # Clean the build and installation files
@@ -194,53 +207,61 @@ distclean: env # Clean config files
 	make -C ${SOURCE_DIR} distclean
 	rm ${CONFIG_DIR}/${CONFIG_NAME}
 
+
+### git --------------------------------------------------------------
+# Some git wrappers
+
 .PHONY: log
-log: env # Git log
+git-log: env # Git log
 	cd ${SOURCE_DIR} && git log
 
 .PHONY: fetch
-fetch: env # Git fetch
+git-fetch: env # Git fetch
 	cd ${SOURCE_DIR} && git fetch
 
 .PHONY: merge
-merge: env # Git merge
+git-merge: env # Git merge
 	cd ${SOURCE_DIR} && git merge
 
 .PHONY: diff-origin
-diff-origin: env # Git diff origin
+git-diff-origin: env # Git diff origin
 	cd ${SOURCE_DIR} && git diff origin
 
 .PHONY: diff
-diff: env # Git diff local
+git-diff: env # Git diff local
 	cd ${SOURCE_DIR} && git diff
 
 .PHONY: pull
-pull: env # Git pull
+git-pull: env # Git pull
 	cd ${SOURCE_DIR} && git pull
 
-.PHONY: source-dir
-# This is used by other tools, like emacs, to know where to look for
-# the sources
-source-dir: # Output the kernel source directory
-	@echo ${SOURCE_DIR}
-
-## Dependencies
+### Dependencies -----------------------------------------------------
+# Download, compile and install major dependencies
+# - gcc
+# - binutils
+# - qemu
 
 ${DEPS_INSTALL_DIR}:
 	mkdir -p ${DEPS_INSTALL_DIR}
+	mkdir -p ${DEPS_INSTALL_DIR}/${TARGET_ARCH}
+
+deps: deps-gcc deps-binutils deps-qemu env ## Download and build dependencies
+
+
+# GCC
 
 GCC_BUILD_DIR=${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}/build
 GCC_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
-	   --disable-multilib\
-	   --with-system-zlib\
-	   --enable-default-pie\
-	   --enable-default-ssp\
-	   --enable-host-pie\
-	   --disable-fixincludes\
-	   --enable-languages=c,m2\
-	   --with-mpfr\
-	   --with-mpc\
-	   --with-gmp\
+	   --disable-multilib      \
+	   --with-system-zlib      \
+	   --enable-default-pie    \
+	   --enable-default-ssp    \
+	   --enable-host-pie       \
+	   --disable-fixincludes   \
+	   --enable-languages=c,m2 \
+	   --with-mpfr             \
+	   --with-mpc              \
+	   --with-gmp              \
 		 --target ${ARCH_GCC}
 
 ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}:
@@ -252,13 +273,16 @@ ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}:
 ${GCC_BUILD_DIR}: ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}
 	mkdir -p ${GCC_BUILD_DIR}
 
-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install gcc
+deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install gcc
 	cd ${GCC_BUILD_DIR} && ../configure ${GCC_FLAGS}
-	cd ${GCC_BUILD_DIR} && make -j${NPROC}
+	cd ${GCC_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${GCC_BUILD_DIR} && make install
 
+
+# Binutils
+
 BINUTILS_BUILD_DIR=${DEPS_SOURCES_DIR}/binutils-${BINUTILS_VERSION}/build
-BINUTILS_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}
+BINUTILS_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}
              --sysconfdir=/etc   \
              --enable-ld=default \
              --enable-plugins    \
@@ -278,28 +302,74 @@ ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}:
 ${BINUTILS_BUILD_DIR}: ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}
 	mkdir -p ${BINUTILS_BUILD_DIR}
 
-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BUILD_DIR}${DEPS_INSTALL_DIR} ## Download, compile and install binutils
+deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install binutils
 	cd ${BINUTILS_BUILD_DIR} && ../configure ${GCC_FLAGS}
-	cd ${BINUTILS_BUILD_DIR} && make -j${NPROC}
+	cd ${BINUTILS_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${BINUTILS_BUILD_DIR} && make install
 
-deps: gcc binutils env ## Download and build dependencies
+
+# Qemu
+
+QEMU_BUILD_DIR=${DEPS_SOURCES_DIR}/qemu-${QEMU_VERSION}/build
+QEMU_FLAGS?=../configure --prefix=${DEPS_INSTALL_DIR} \
+             --sysconfdir=/etc           \
+             --localstatedir=/var        \
+             --target-list=${ARCH_QEMU}  \
+             --audio-drv-list=alsa       \
+             --disable-pa                \
+             --enable-slirp
+
+${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}:
+	wget --directory-prefix ${DEPS_SOURCE_DIR} https://https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz
+	tar -xf ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} -C ${DEPS_SOURCE_DIR}/
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.xz*
+
+
+${QEMU_BUILD_DIR}: ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}
+	mkdir -p ${QEMU_BUILD_DIR}
+
+deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_INSTALL_DIR}
+	cd ${QEMU_BUILD_DIR} && ../configure ${QEMU_FLAGS}
+	cd ${BINUTILS_BUILD_DIR} && make ${MAKE_FLAGS}
+	cd ${BINUTILS_BUILD_DIR} && make install
+
+
+# External dependencies
 
 .PHONY: deps-fedora
 deps-fedora: env ## Install build dependencies in fedora
-	sudo dnf install -y ${DEPS_FEDORA}
+	sudo dnf install -y ${DEPS_EXTERNAL_FEDORA}
+
+
+### Misc -------------------------------------------------------------
+
+all: help
+
+.PHONY: env
+# This is a dependency for most of the other commands so the user will
+# always be informed on which env is active
+env: # Print the ENV value
+	@echo Using ENV=${ENV}
+
+.PHONY: source-dir
+# This is used by other tools, like emacs, to know where to look for
+# the sources
+source-dir: # Output the kernel source directory
+	@echo ${SOURCE_DIR}
 
 .PHONY: settings
+# Please, when you add a new config variable, add an entry here
 settings: # Shows value of variables
-	@echo -e "\n* General:\n"
+	@echo -e "\nbuild:\n"
 	@echo ENV=${ENV}
-	@echo TARGET_ARCH=${TARGET_ARCH}
 	@echo BUILD_ARCH=${BUILD_ARCH}
 	@echo HOST_ARCH=${HOST_ARCH}
+	@echo TARGET_ARCH=${TARGET_ARCH}
 	@echo KERNEL_NAME=${KERNEL_NAME}
+	@echo NPROC=${NPROC}
 	@echo MAKE_FLAGS=\"${MAKE_FLAGS}\"
 	@echo KERNEL_FLAGS=\"${KERNEL_FLAGS}\"
-	@echo -e "\n* Directories:\n"
+	@echo -e "\ndirectories:\n"
 	@echo WORKTREE=${WORKTREE}
 	@echo SOURCE_DIR=${SOURCE_DIR}
 	@echo INSTALL_DIR=${INSTALL_DIR}
@@ -307,7 +377,7 @@ settings: # Shows value of variables
 	@echo CONFIG_NAME=${CONFIG_NAME}
 	@echo DEPS_SOURCE_DIR=${DEPS_SOURCE_DIR}
 	@echo DEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}
-	@echo -e "\n* Rootfs image:\n"
+	@echo -e "\nrootfs image:\n"
 	@echo IMG_NAME=${IMG_NAME}
 	@echo IMG_TMP_MOUNT=${IMG_TMP_MOUNT}
 	@echo IMG_FS=${IMG_FS}
@@ -315,16 +385,15 @@ settings: # Shows value of variables
 	@echo IMG_USER=${IMG_USER}
 	@echo IMG_PASSWD=${IMG_PASSWD}
 	@echo IMG_SIZE=${IMG_SIZE}
-	@echo -e "\n* Executables:\n"
+	@echo -e "\ndependencies:\n"
 	@echo GCC_VERSION=${GCC_VERSION}
 	@echo GCC_MIRROR=${GCC_MIRROR}
 	@echo BINUTILS_VERSION=${BINUTILS_VERSION}
 	@echo CC_DIR=${CC_DIR}
 	@echo DEBOOTSTRAP_DIR=${DEBOOTSTRAP_DIR}
-	@echo QEMU_DIR=${QEMU_DIR}
+	@echo QEMU_VERSION=${QEMU_VERSION}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}
-	@echo -e "\n* Dependencies:\n"
-	@echo DEPS_FEDORA?=${DEPS_FEDORA}
+	@echo DEPS_EXTERNAL_FEDORA=${DEPS_EXTERNAL_FEDORA}
 
 .PHONY: help
 help: # Shows help
@@ -333,3 +402,5 @@ help: # Shows help
 	@echo "make targets:"
 	@echo
 	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile | column -t -l 2 | sort
+
+## End ---------------------------------------------------------------
