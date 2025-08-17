@@ -56,7 +56,7 @@ endif
 
 # Git worktree
 WORKTREE?=
-# Name of the directory with the kernel sources
+# Name of the directory with the kernel sources (not the full path)
 KERNEL_SOURCE?=${ENV}
 # Directory of the kernel sources
 SOURCE_DIR?=${PWD}/sources/${KERNEL_SOURCE}/${WORKTREE}

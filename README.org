@@ -8,13 +8,13 @@ configurations.
 
 LKDE is designed to be simple and easy to customize and configure,
 making it both powerful and embeddable. You can integrate LKDE with
-other projects to enhance the development workflow and testing
+other projects to enhance your development workflow and testing
 infastructure with more control over the operating system's
 configuration.
 
-Originally conceived for Linux, LKDE is built with adaptability in
-mind. Plans are underway to extend support to other platforms,
-including NetBSD.
+This project was born with Linux in mind, but it is easily
+customizable to develop on a broader set of applications (NetBSD
+support is already planned).
 
 ** Environments
 
@@ -26,7 +26,7 @@ regardless of the settings: they represent a central place to store
 your development state, enabling you to switch between one environment
 and the other with ease.
 
-To inspect the current settings of your environment, run:
+To inspect the current settings of your environment, run =make settings=:
 
 #+begin_src bash
 $ make settings
@@ -74,20 +74,20 @@ KERNEL_SOURCE_GIT=
 #+end_src
 
 You may define an environment by creating a file named =.env-NAME=,
-where NAME represents the identity of your chosen environment:
+where =NAME= represents the name of your environment:
 
 #+begin_src
   touch .env-bpf-next
   echo TARGET_ARCH=x86_64 >> .env-bpf-next  # Add variables as you need
 #+end_src
 
-Select your working environment by setting the ENV variable:
+Select your working environment by setting the =ENV= variable:
 
 #+begin_src
 make build ENV=bpf-next
 #+end_src
 
-or:
+or exporting it:
 
 #+begin_src
 export ENV=bpf-next
@@ -319,9 +319,9 @@ port 2222:
 #+end_src
 
 
-If you wanted to work on a different tree, say Linux 6.16, or a
-different architecture, you would only change the environment file
-and use the same exact commands.
+If you wanted to work on a different tree, say linux-next, or on the
+same tree but with a different architecture, you would only change the
+environment file and use the same exact commands.
 
 Happy hacking!
 
