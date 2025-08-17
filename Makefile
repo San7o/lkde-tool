@@ -16,7 +16,7 @@ include .env-${ENV}
 # Change the following variables as you requre
 
 
-## Build
+## Build -------------------------------------------------------------
 
 # System which you are using to build the compiler
 BUILD_ARCH?=${shell arch}
@@ -35,7 +35,7 @@ KERNEL_FLAGS?=ARCH=${TARGET_ARCH}\
 							CROSS_COMPILE=${CC_DIR}/${ARCH_GCC}-
 
 
-## Internal architecture variables
+## Internal architecture variables -----------------------------------
 # Programs may use different names to refer to the same architecture,
 # so we need to do this
 
@@ -52,7 +52,7 @@ ARCH_GCC?=unknown
 endif
 
 
-## Directories
+## Directories -------------------------------------------------------
 
 # Git worktree
 WORKTREE?=
@@ -70,7 +70,7 @@ DEPS_SOURCE_DIR?=${PWD}/deps
 DEPS_INSTALL_DIR?=${PWD}/usr
 
 
-## Rootfs Image
+## Rootfs Image ------------------------------------------------------
 
 # Name of the root filesystem image used to boot the kernel
 IMG_NAME?=image-${ENV}-${TARGET_ARCH}.img
@@ -88,7 +88,7 @@ IMG_PASSWD?=test
 IMG_SIZE?=10G
 
 
-## Dependencies
+## Dependencies ------------------------------------------------------
 
 # Version of GCC to download
 GCC_VERSION?=15.2.0
@@ -118,7 +118,7 @@ DEPS_EXTERNAL_FEDORA?=libcap-ng-devel\
 ### Commands ---------------------------------------------------------
 
 
-## Config dir
+## Config dir --------------------------------------------------------
 
 .PHONY: ${CONFIG_DIR}
 ${CONFIG_DIR}:
@@ -141,13 +141,30 @@ menuconfig: ${CONFIG_DIR} env # Run menuconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 
-## Building
+## Building ----------------------------------------------------------
 
 
 .PHONY: build
 build: env ${CONFIG_DIR}/${CONFIG_NAME} # Build the kernel
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} ${MAKE_FLAGS}
+
+.PHONY: clean
+clean: install-clean env # Clean the build and installation files
+	make -C ${SOURCE_DIR} clean
+	if [ -d ${IMG_TMP_MOUNT} ]; then rm -r ${IMG_TMP_MOUNT}; fi
+
+.PHONY: clean
+install-clean: env # Clean the installation files
+	if [ "${INSTALL_DIR}" != "" ]; then rm -rf ${INSTALL_DIR}/; fi
+
+.PHONY: distclean
+distclean: env # Clean config files
+	make -C ${SOURCE_DIR} distclean
+	rm ${CONFIG_DIR}/${CONFIG_NAME}
+
+
+## Image -------------------------------------------------------------
 
 .PHONY: ${IMG_TMP_MOUNT}
 ${IMG_TMP_MOUNT}:
@@ -193,20 +210,6 @@ install: env ${INSTALL_DIR} # Copy the image to the install directory
 qemu: env # Run qemu
 	${DEPS_INSTALL_DIR}/bin/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide ${QEMU_FLAGS}
 
-.PHONY: clean
-clean: install-clean env # Clean the build and installation files
-	make -C ${SOURCE_DIR} clean
-	if [ -d ${IMG_TMP_MOUNT} ]; then rm -r ${IMG_TMP_MOUNT}; fi
-
-.PHONY: clean
-install-clean: env # Clean the installation files
-	if [ "${INSTALL_DIR}" != "" ]; then rm -rf ${INSTALL_DIR}/; fi
-
-.PHONY: distclean
-distclean: env # Clean config files
-	make -C ${SOURCE_DIR} distclean
-	rm ${CONFIG_DIR}/${CONFIG_NAME}
-
 
 ### git --------------------------------------------------------------
 # Some git wrappers
@@ -235,6 +238,7 @@ git-diff: env # Git diff local
 git-pull: env # Git pull
 	cd ${SOURCE_DIR} && git pull
 
+
 ### Dependencies -----------------------------------------------------
 # Download, compile and install major dependencies
 # - gcc
@@ -248,7 +252,7 @@ ${DEPS_INSTALL_DIR}:
 deps: deps-gcc deps-binutils deps-qemu env ## Download and build dependencies
 
 
-# GCC
+## GCC ---------------------------------------------------------------
 
 GCC_BUILD_DIR=${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}/build
 GCC_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
@@ -279,7 +283,7 @@ deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INST
 	cd ${GCC_BUILD_DIR} && make install
 
 
-# Binutils
+## Binutils ----------------------------------------------------------
 
 BINUTILS_BUILD_DIR=${DEPS_SOURCES_DIR}/binutils-${BINUTILS_VERSION}/build
 BINUTILS_FLAGS=../configure --prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}
@@ -308,7 +312,7 @@ deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BU
 	cd ${BINUTILS_BUILD_DIR} && make install
 
 
-# Qemu
+## Qemu --------------------------------------------------------------
 
 QEMU_BUILD_DIR=${DEPS_SOURCES_DIR}/qemu-${QEMU_VERSION}/build
 QEMU_FLAGS?=../configure --prefix=${DEPS_INSTALL_DIR} \
@@ -334,7 +338,7 @@ deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_
 	cd ${BINUTILS_BUILD_DIR} && make install
 
 
-# External dependencies
+## External dependencies ---------------------------------------------
 
 .PHONY: deps-fedora
 deps-fedora: env ## Install build dependencies in fedora
@@ -402,5 +406,6 @@ help: # Shows help
 	@echo "make targets:"
 	@echo
 	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile | column -t -l 2 | sort
+
 
 ## End ---------------------------------------------------------------
