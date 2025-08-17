@@ -309,3 +309,13 @@ different architecture, you would only change the environment file
 and use the same exact commands.
 
 Happy hacking!
+
+
+** Future plans
+
+LKDE could be used to bootstrap a fully-customizable kubernetes
+cluster for testing purposes.
+
+** License
+
+LKDE is a free and open source project under the GPLv2 license.
