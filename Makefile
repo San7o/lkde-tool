@@ -119,7 +119,7 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -nic user,hostfwd=tcp::${QEMU_SSH_PORT}-:22 \
             -m ${QEMU_MEM}\
             -smp ${QEMU_SOCKETS}
-# Other dependencies
+# Other dependencies needed to build the core dependencies and toolchain
 DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget
 # HTTP kernel sources, for example https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
 KERNEL_SOURCE_HTTP?=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz

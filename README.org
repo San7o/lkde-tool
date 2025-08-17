@@ -266,7 +266,13 @@ The sources will be placed in =sources/linux-6.16=.
 Next, you should build your tools to work with the target
 architecture, like gcc, binutils and qemu.  You can run =make deps= do
 download and compile everything. The sources will be placed in =deps/=
-and installed in =usr/= or =usr/$TARGET_ARCH=:
+and installed in =usr/= or =usr/$TARGET_ARCH=.
+
+- Warning: this compiles gcc and other heavy projects, it may take
+  hours or days to compile. If you are building for the same target
+  architecture as the host one, you can skip this step and set the
+  variables =DEPS_INSTALL_DIR= and =KERNEL_FLAGS= according to your
+  system.
 
 #+begin_src
   make deps
