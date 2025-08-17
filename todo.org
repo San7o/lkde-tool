@@ -1,5 +1,0 @@
-#+startup: content indent
-
-* Future work
-
-** TODO Make the qemu image accessible through ssh
