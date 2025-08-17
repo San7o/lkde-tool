@@ -272,7 +272,7 @@ and installed in =usr/= or =usr/$TARGET_ARCH=.
   hours or days to compile. If you are building for the same target
   architecture as the host one, you can skip this step and set the
   variables =DEPS_INSTALL_DIR= and =KERNEL_FLAGS= according to your
-  system.
+  system (assuming you already have the compiled programs somewhere).
 
 #+begin_src
   make deps
