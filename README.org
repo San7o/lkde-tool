@@ -256,7 +256,7 @@ If we want to use LKDE to download the sources, we need to set either
 =KERNEL_SOURCE_HTTP= or =KERNEL_SOURCE_GIT= in the environment:
 
 #+begin_src
-  echo KERNEL_SOURCE_HTTP?=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz > .env-linux-6.16
+  echo KERNEL_SOURCE_HTTP=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz > .env-linux-6.16
 #+end_src
 
 We will use the default settings and conventions on x86_64
