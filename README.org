@@ -215,11 +215,11 @@ a particular directory structure. For example, with three environments
 
 #+begin_src
 .
-├── config/                     # .config files for the kernel build
+├── config/                               # .config files for the kernel build
 │   ├── .config-linux
 │   ├── .config-linux-6.16
 │   └── .config-linux-5.10.240
-├── deps/                       # sources and build location for dependencies
+├── deps/                                 # sources and build location for dependencies
 │   ├── binutils-2.45/
 │   ├── debootstrap/
 │   ├── gcc-15.2.0/
@@ -227,31 +227,31 @@ a particular directory structure. For example, with three environments
 │   ├── linux-6.16/
 │   ├── linux-5.10.240/
 │   └── qemu-10.0.3/
-├── environments/               # environments used 
+├── environments/                         # environments used 
 │   ├── .env-linux
 │   ├── .env-linux-6.16
 │   └── .env-linux-5.10.240
-├── image/                      # additions to the root directory in the image
+├── image/                                # additions to the root directory in the image
 │   └── etc/
-├── install/                    # compiled kernels and bootable images
+├── install/                              # compiled kernels and bootable images
 │   ├── linux-x86_64/ 
 │   ├── linux-6.16-x86_64/
 │   └── linux-5.10.240-arm64/
 ├── LICENSE.md
-├── lkde.el                     # emacs tool
-├── lkde.sh                     # shell tool
-├── Makefile                    # root Makefile
-├── mnt/                        # temporary mount directory
+├── lkde.el                               # emacs tool
+├── lkde.sh                               # shell tool
+├── Makefile                              # root Makefile
+├── mnt/                                  # temporary mount directory
 │   ├── image-linux-x86_64.img/
 │   ├── image-linux-6.16-x86_64.img/
 │   └── image-linux-5.10.240-arm64.img/
 ├── README.org
-├── sources/                    # kernel sources
+├── sources/                              # kernel sources
 │   ├── linux/
 │   ├── linux-6.16/
 │   └── linux-5.10.240/
 ├── troubleshooting.org
-└── usr/                        # dependencies installation
+└── usr/                                  # dependencies installation
     ├── bin/
     ├── include/
     ├── lib/
