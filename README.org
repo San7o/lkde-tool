@@ -68,8 +68,10 @@ To inspect the current settings of your environment, run =make settings=:
   QEMU_SSH_PORT=2222
   QEMU_MEM=6G
   QEMU_SOCKETS=4
+  QEMU_DISPLAY_BACKEND=gtk
   QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -nic user,hostfwd=tcp::2222-:22 -m 6G -smp 4
-  DEPS_EXTERNAL_FEDORA=libcap-ng-devel wget
+  DEPS_EXTERNAL_FEDORA=libcap-ng-devel wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev ninja flex bison
+  DEPS_EXTERNAL_UBUNTU=libcap-ng-dev wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev ninja-build libglib2.0-dev flex bison
   KERNEL_SOURCE_HTTP=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
   KERNEL_SOURCE_GIT=
 #+end_src
@@ -267,9 +269,13 @@ We will use the default settings and conventions on x86_64
 The sources will be placed in =sources/linux-6.16=.
 
 Next, you should build your tools to work with the target
-architecture, like gcc, binutils and qemu.  You can run =make deps= do
-download and compile everything. The sources will be placed in =deps/=
-and installed in =usr/= or =usr/$TARGET_ARCH=.
+architecture, like gcc, binutils and qemu.  You first need some other
+dependencies to build these tools which can be downloaded from your
+distribution: =deps-fedora= and =deps-ubuntu= are already provided, if
+you use another distribution you can find the names of the packages
+yourself. Now you can run =make deps= do download and compile
+everything. The sources will be placed in =deps/= and installed in
+=usr/= or =usr/$TARGET_ARCH=.
 
 - Warning: this compiles gcc and other heavy projects, it may take
   hours or days to compile. If you are building for the same target

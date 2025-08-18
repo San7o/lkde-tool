@@ -114,6 +114,8 @@ QEMU_SSH_PORT?=2222
 QEMU_MEM?=6G
 # Number of sockets
 QEMU_SOCKETS?=4
+# Display backend used by qemu
+QEMU_DISPLAY_BACKEND=gtk
 # Qemu flags
 QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             --enable-kvm\
@@ -122,8 +124,8 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -m ${QEMU_MEM}\
             -smp ${QEMU_SOCKETS}
 # Other dependencies needed to build the core dependencies and toolchain
-DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev
-DEPS_EXTERNAL_UBUNTU?=libcap-ng-dev wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev
+DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev ninja flex bison gtk3-devel
+DEPS_EXTERNAL_UBUNTU?=libcap-ng-dev wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev ninja-build libglib2.0-dev flex bison libgtk-3-dev
 # HTTP kernel sources, for example https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
 KERNEL_SOURCE_HTTP?=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
 # Git kernel sources. Use either HTTP or git.
@@ -188,7 +190,6 @@ distclean: env # Clean config files
 .PHONY: ${IMG_TMP_MOUNT}
 ${IMG_TMP_MOUNT}:
 	mkdir -p ${IMG_TMP_MOUNT}
-	echo "*" > ${IMG_TMP_MOUNT}/.gitignore
 
 .PHONY: image
 image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
@@ -280,7 +281,8 @@ ifneq (${KERNEL_SOURCE_HTTP},"")
 	tar -xf ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz -C ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/ --strip-components 1
 	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
 	mkdir -p ${SOURCE_DIR}
-	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE} ${SOURCE_DIR}
+	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/* ${SOURCE_DIR} 2>/dev/null || :
+	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/.* ${SOURCE_DIR} 2>/dev/null || :
 else ifneq (${KERNEL_SOURCE_GIT},"")
 	git clone ${KERNEL_SOURCE_GIT} ${SOURCE_DIR}
 else
@@ -295,6 +297,7 @@ download: ${SOURCE_DIR} # Download kernel sources from HTTP or GIT
 GCC_BUILD_DIR=${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}/build
 GCC_BUILD_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
 	             --disable-multilib      \
+               --disable-isl           \
 	             --with-system-zlib      \
 	             --enable-default-pie    \
 	             --enable-default-ssp    \
@@ -358,7 +361,8 @@ QEMU_BUILD_FLAGS?=--prefix=${DEPS_INSTALL_DIR} \
                   --sysconfdir=/etc           \
                   --localstatedir=/var        \
                   --target-list=${ARCH_QEMU}-softmmu  \
-                  --audio-drv-list=jack       \
+                  --enable-${QEMU_DISPLAY_BACKEND} \
+                  --audio-drv-list=default    \
                   --disable-pa                \
                   --enable-slirp
 
@@ -397,9 +401,18 @@ deps-fedora: env ## Install build dependencies in fedora
 deps-ubuntu: env ## Install build dependencies in ubuntu
 	sudo apt install -y ${DEPS_EXTERNAL_UBUNTU}
 
+
 ### Misc -------------------------------------------------------------
 
 all: help
+
+.PHONY: full
+full: env ## Download and Build the dependencies, kernel and image
+	make download ENV=${ENV}
+	make deps ENV=${ENV}
+	make build ENV=${ENV}
+	make install ENV=${ENV}
+	make image ENV=${ENV}
 
 .PHONY: env
 # This is a dependency for most of the other commands so the user will
@@ -454,8 +467,10 @@ settings: # Shows value of variables
 	@echo QEMU_SSH_PORT=${QEMU_SSH_PORT}
 	@echo QEMU_MEM=${QEMU_MEM}
 	@echo QEMU_SOCKETS=${QEMU_SOCKETS}
+	@echo QEMU_DISPLAY_BACKEND=${QEMU_DISPLAY_BACKEND}
 	@echo QEMU_FLAGS=${QEMU_FLAGS}
 	@echo DEPS_EXTERNAL_FEDORA=${DEPS_EXTERNAL_FEDORA}
+	@echo DEPS_EXTERNAL_UBUNTU=${DEPS_EXTERNAL_UBUNTU}
 	@echo KERNEL_SOURCE_HTTP=${KERNEL_SOURCE_HTTP}
 	@echo KERNEL_SOURCE_GIT=${KERNEL_SOURCE_GIT}
 
