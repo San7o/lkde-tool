@@ -32,7 +32,7 @@ To inspect the current settings of your environment, run =make settings=:
   $ make settings
   # build -----------------------------------------------#
   ENV=linux
-  ENVIRONMENT_DIR=/home/giovannisantini/projects/LKDE/environments
+  ENVIRONMENT_DIR=/home/santo/projects/LKDE/environments
   BUILD_ARCH=x86_64
   HOST_ARCH=x86_64
   TARGET_ARCH=x86_64
