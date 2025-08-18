@@ -6,7 +6,7 @@ This repository contains the Linux Kernel Development Environment
 applications in multiple kernel branches, trees, architectures and
 configurations.
 
-LKDE is designed to be simple and easy to customize and configure,
+LKDE is designed to be simple and easy to extend and configure,
 making it both powerful and embeddable. You can integrate LKDE with
 other projects to enhance your development workflow and testing
 infastructure with more control over the operating system's
