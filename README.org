@@ -215,7 +215,7 @@ a particular directory structure. For example, with three environments
 
 #+begin_src
 .
-├── config/                     # .config files for the kernel ui
+├── config/                     # .config files for the kernel build
 │   ├── .config-linux
 │   ├── .config-linux-6.16
 │   └── .config-linux-5.10.240
