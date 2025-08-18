@@ -260,7 +260,7 @@ a particular directory structure. For example, with three environments
     └── x86_64/
 #+end_src
 
-Note that **you do not need to setup this yourself**, the tool will
+Note that *you do not need to setup this yourself*, the tool will
 automatically create this directory structure for your environment.
 
 In =sources= you should place Linux source trees in subdirectories,
