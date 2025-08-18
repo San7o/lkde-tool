@@ -418,6 +418,7 @@ source-dir: # Output the kernel source directory
 settings: # Shows value of variables
 	@echo -e "# build -----------------------------------------------#"
 	@echo ENV=${ENV}
+	@echo ENVIRONMENT_DIR=${ENVIRONMENT_DIR}
 	@echo BUILD_ARCH=${BUILD_ARCH}
 	@echo HOST_ARCH=${HOST_ARCH}
 	@echo TARGET_ARCH=${TARGET_ARCH}

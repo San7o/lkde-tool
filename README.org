@@ -29,55 +29,57 @@ and the other with ease.
 To inspect the current settings of your environment, run =make settings=:
 
 #+begin_src bash
-$ make settings
-# build -----------------------------------------------#
-ENV=linux
-BUILD_ARCH=x86_64
-HOST_ARCH=x86_64
-TARGET_ARCH=x86_64
-KERNEL_NAME=kernel-linux-x86_64
-NPROC=4
-MAKE_FLAGS="-j4"
-KERNEL_FLAGS="ARCH=x86_64 CROSS_COMPILE=/home/santo/projects/LKDE/usr/x86_64/bin/x86_64-pc-linux-gnu-"
-# directories -----------------------------------------#
-WORKTREE=
-KERNEL_SOURCE=linux
-SOURCE_DIR=/home/santo/projects/LKDE/sources/linux/
-INSTALL_DIR=/home/santo/projects/LKDE/install/linux-x86_64
-CONFIG_DIR=/home/santo/projects/LKDE/config
-CONFIG_NAME=.config-linux
-DEPS_SOURCE_DIR=/home/santo/projects/LKDE/deps
-DEPS_INSTALL_DIR=/home/santo/projects/LKDE/usr
-# rootfs image ----------------------------------------#
-IMG_NAME=image-linux-x86_64.img
-IMG_DIR=/home/santo/projects/LKDE/image
-IMG_TMP_MOUNT=/home/santo/projects/LKDE/mnt/image-linux-x86_64.img
-IMG_FS=ext4
-IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux,sudo,openssh-server,dhcpcd
-IMG_USER=test
-IMG_PASSWD=test
-IMG_SIZE=10G
-# dependencies ----------------------------------------#
-GCC_VERSION=15.2.0
-GCC_MIRROR=ftp.fu-berlin.de
-BINUTILS_VERSION=2.45
-CC_DIR=/home/santo/projects/LKDE/usr/x86_64/bin
-DEBOOTSTRAP_VERSION=1.0.141
-QEMU_VERSION=10.0.3
-QEMU_SSH_PORT=2222
-QEMU_MEM=6G
-QEMU_SOCKETS=4
-QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -nic user,hostfwd=tcp::2222-:22 -m 6G -smp 4
-DEPS_EXTERNAL_FEDORA=libcap-ng-devel wget
-KERNEL_SOURCE_HTTP=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
-KERNEL_SOURCE_GIT=
+  $ make settings
+  # build -----------------------------------------------#
+  ENV=linux
+  ENVIRONMENT_DIR=/home/giovannisantini/projects/LKDE/environments
+  BUILD_ARCH=x86_64
+  HOST_ARCH=x86_64
+  TARGET_ARCH=x86_64
+  KERNEL_NAME=kernel-linux-x86_64
+  NPROC=4
+  MAKE_FLAGS="-j4"
+  KERNEL_FLAGS="ARCH=x86_64 CROSS_COMPILE=/home/santo/projects/LKDE/usr/x86_64/bin/x86_64-pc-linux-gnu-"
+  # directories -----------------------------------------#
+  WORKTREE=
+  KERNEL_SOURCE=linux
+  SOURCE_DIR=/home/santo/projects/LKDE/sources/linux/
+  INSTALL_DIR=/home/santo/projects/LKDE/install/linux-x86_64
+  CONFIG_DIR=/home/santo/projects/LKDE/config
+  CONFIG_NAME=.config-linux
+  DEPS_SOURCE_DIR=/home/santo/projects/LKDE/deps
+  DEPS_INSTALL_DIR=/home/santo/projects/LKDE/usr
+  # rootfs image ----------------------------------------#
+  IMG_NAME=image-linux-x86_64.img
+  IMG_DIR=/home/santo/projects/LKDE/image
+  IMG_TMP_MOUNT=/home/santo/projects/LKDE/mnt/image-linux-x86_64.img
+  IMG_FS=ext4
+  IMG_PACKAGES=curl,make,vim,git,bsdextrautils,gcc,build-essential,libc6-dev,flex,bison,bc,tmux,sudo,openssh-server,dhcpcd
+  IMG_USER=test
+  IMG_PASSWD=test
+  IMG_SIZE=10G
+  # dependencies ----------------------------------------#
+  GCC_VERSION=15.2.0
+  GCC_MIRROR=ftp.fu-berlin.de
+  BINUTILS_VERSION=2.45
+  CC_DIR=/home/santo/projects/LKDE/usr/x86_64/bin
+  DEBOOTSTRAP_VERSION=1.0.141
+  QEMU_VERSION=10.0.3
+  QEMU_SSH_PORT=2222
+  QEMU_MEM=6G
+  QEMU_SOCKETS=4
+  QEMU_FLAGS=-append root=/dev/sda console=ttyS0 rw --enable-kvm -virtfs local,path=/home/santo/projects/LKDE,mount_tag=host0,security_model=passthrough,id=host0 -nic user,hostfwd=tcp::2222-:22 -m 6G -smp 4
+  DEPS_EXTERNAL_FEDORA=libcap-ng-devel wget
+  KERNEL_SOURCE_HTTP=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
+  KERNEL_SOURCE_GIT=
 #+end_src
 
-You may define an environment by creating a file named =.env-NAME=,
-where =NAME= represents the name of your environment:
+You may define an environment by creating a file named =.env-NAME= in
+the =environments= directory, where =NAME= represents the name of your
+environment:
 
 #+begin_src
-  touch .env-bpf-next
+  touch environments/.env-bpf-next
   echo TARGET_ARCH=x86_64 >> .env-bpf-next  # Add variables as you need
 #+end_src
 
@@ -240,10 +242,11 @@ the =.env-NAME= file.
 ** Linux Workflow
 
 We will now setup LKDE for working with linux 6.16. Let's first create
-a new environment called =linux-6.16=:
+a new environment called =linux-6.16=, by default environments go in
+the =environments= directory:
 
 #+begin_src bash
-  touch .env-linux-6.16
+  touch environments/.env-linux-6.16
   export ENV=linux-6.16
 #+end_src
 
