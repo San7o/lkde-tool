@@ -224,10 +224,10 @@ a particular directory structure. For example, with three environments
 │   ├── debootstrap/
 │   ├── gcc-15.2.0/
 │   ├── linux/
-│   ├── linux/
-│   ├── linux/
+│   ├── linux-6.16/
+│   ├── linux-5.10.240/
 │   └── qemu-10.0.3/
-├── environments/               # environment used 
+├── environments/               # environments used 
 │   ├── .env-linux
 │   ├── .env-linux-6.16
 │   └── .env-linux-5.10.240
@@ -236,7 +236,7 @@ a particular directory structure. For example, with three environments
 ├── install/                    # compiled kernels and bootable images
 │   ├── linux-x86_64/ 
 │   ├── linux-6.16-x86_64/
-│   └── linux-5.10.240-amd64/
+│   └── linux-5.10.240-arm64/
 ├── LICENSE.md
 ├── lkde.el                     # emacs tool
 ├── lkde.sh                     # shell tool
@@ -244,7 +244,7 @@ a particular directory structure. For example, with three environments
 ├── mnt/                        # temporary mount directory
 │   ├── image-linux-x86_64.img/
 │   ├── image-linux-6.16-x86_64.img/
-│   └── image-linux-5.10.240-amd64.img/
+│   └── image-linux-5.10.240-arm64.img/
 ├── README.org
 ├── sources/                    # kernel sources
 │   ├── linux/
