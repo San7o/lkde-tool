@@ -260,6 +260,9 @@ a particular directory structure. For example, with three environments
     └── x86_64/
 #+end_src
 
+Note that **you do not need to setup this yourself**, the tool will
+automatically create this directory structure for your environment.
+
 In =sources= you should place Linux source trees in subdirectories,
 for example =sources/bpf-next=, =sources/linux-next= or
 =sources/linux-6.16=.  When generating some files like a kernel
