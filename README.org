@@ -296,7 +296,7 @@ options like:
   make menuconfig
 #+end_src
 
-This will create the file =config/.env-linux-6.16= with your
+This will create the file =config/.config-linux-6.16= with your
 configuration. You can build the kernel using this configuration with:
 
 #+begin_src bash
