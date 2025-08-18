@@ -1,1 +1,6 @@
 mnt
+config
+deps
+install
+sources
+patches

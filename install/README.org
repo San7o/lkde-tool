@@ -1,3 +1,0 @@
-* Install
-
-Kernel installations go here.

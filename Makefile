@@ -9,8 +9,10 @@ PWD=${shell pwd}
 
 # Environment selected
 ENV?=linux
+# Directory of the envionment
+ENVIRONMENT_DIR?=${PWD}/environments
 # Include the environment
-include .env-${ENV}
+include ${ENVIRONMENT_DIR}/.env-${ENV}
 
 ### Config variables -------------------------------------------------
 # Change the following variables as you requre
@@ -120,7 +122,8 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
             -m ${QEMU_MEM}\
             -smp ${QEMU_SOCKETS}
 # Other dependencies needed to build the core dependencies and toolchain
-DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget
+DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev
+DEPS_EXTERNAL_UBUNTU?=libcap-ng-dev wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev
 # HTTP kernel sources, for example https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
 KERNEL_SOURCE_HTTP?=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz
 # Git kernel sources. Use either HTTP or git.
@@ -134,6 +137,7 @@ KERNEL_SOURCE_GIT?= #https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/li
 .PHONY: ${CONFIG_DIR}
 ${CONFIG_DIR}:
 	mkdir -p ${CONFIG_DIR}
+	echo "*" > ${CONFIG_DIR}/.gitignore
 
 .PHONY: configure
 defconfig: ${CONFIG_DIR} env # Generate the default .config file
@@ -184,6 +188,7 @@ distclean: env # Clean config files
 .PHONY: ${IMG_TMP_MOUNT}
 ${IMG_TMP_MOUNT}:
 	mkdir -p ${IMG_TMP_MOUNT}
+	echo "*" > ${IMG_TMP_MOUNT}/.gitignore
 
 .PHONY: image
 image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
@@ -261,17 +266,20 @@ git-pull: env # Git pull
 ${DEPS_INSTALL_DIR}:
 	mkdir -p ${DEPS_INSTALL_DIR}
 	mkdir -p ${DEPS_INSTALL_DIR}/${TARGET_ARCH}
+	echo "*" > ${DEPS_INSTALL_DIR}/.gitignore
 
 deps: deps-gcc deps-binutils deps-qemu deps-debootstrap env ## Download and build dependencies
 
 ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}:
 	mkdir -p ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
+	echo "*" > ${DEPS_SOURCE_DIR}/.gitignore
 
 ${SOURCE_DIR}: ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
 ifneq (${KERNEL_SOURCE_HTTP},"")
 	wget ${KERNEL_SOURCE_HTTP} -O ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz
 	tar -xf ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz -C ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/ --strip-components 1
 	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
+	mkdir -p ${SOURCE_DIR}
 	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE} ${SOURCE_DIR}
 else ifneq (${KERNEL_SOURCE_GIT},"")
 	git clone ${KERNEL_SOURCE_GIT} ${SOURCE_DIR}
@@ -386,6 +394,8 @@ deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR}
 deps-fedora: env ## Install build dependencies in fedora
 	sudo dnf install -y ${DEPS_EXTERNAL_FEDORA}
 
+deps-ubuntu: env ## Install build dependencies in ubuntu
+	sudo apt install -y ${DEPS_EXTERNAL_UBUNTU}
 
 ### Misc -------------------------------------------------------------
 
