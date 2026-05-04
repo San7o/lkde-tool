@@ -67,7 +67,9 @@ with the linux kernel (cross-compilers, qemu...). The only
 requirements to use LKDE are gcc + binutils, wget and the standard
 UNIX tools.
 
-## lkde.sh
+
+lkde.sh
+-------
 
 To interact with LKDE, you can use the `lkde.sh` script.
 
