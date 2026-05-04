@@ -1,49 +1,38 @@
-# kernel-module
+kernel-module
+=============
 
 Sample out-of-tree linux kernel module.
 
-## Usage
+
+Usage
+-----
 
 Run the following commands from the lkde root tree. To build the
 module:
 
-```bash
-make module
-```
+    make module
 
 Clean the build:
 
-```bash
-make module-clean
-```
+    make module-clean
 
 To load the image:
 
-```bash
-make module-load
-```
+    make module-load
 
 Inside the image, you will find the module in the /root directory. You
 can load it with `insmod`
 
-```bash
-insmod ./hello.ko
-```
+    insmod ./hello.ko
 
 Check messages in `dmeg`:
 
-```bash
-dmesg
-```
+    dmesg
 
 List loaded modules:
 
-```bash
-lsmod | grep hello
-```
+    lsmod | grep hello
 
 Remove it with:
 
-```bash
-rmmod -f hello
-```
+    rmmod -f hello

@@ -5,16 +5,20 @@
 #
 # --------------------------------------------------------------------
 
+
+# Imports
+
+include conf.make
+include ${KERNEL_MODULE_DIR}/Makefile
+
 #
 # Commands
 #
-
 all: help
 
 
 # Config dir
 
-.PHONY: ${CONFIG_DIR}
 ${CONFIG_DIR}:
 	@mkdir -p ${CONFIG_DIR}
 	@echo "*" > ${CONFIG_DIR}/.gitignore
@@ -35,6 +39,8 @@ menuconfig: ${CONFIG_DIR} env # Run menuconfig
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} menuconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
+${CONFIG_DIR}/${CONFIG_NAME}: ${CONFIG_DIR}
+	touch ${CONFIG_DIR}/${CONFIG_NAME}
 
 # Building
 
@@ -49,12 +55,16 @@ install: env ${INSTALL_DIR} # Copy the image to the install directory
 
 .PHONY: clean
 clean: install-clean env # Clean the build and installation files
-	make -C ${SOURCE_DIR} clean
+	make -C ${SOURCE_DIR} clean || :
 	if [ -d ${IMG_TMP_MOUNT} ]; then rm -r ${IMG_TMP_MOUNT}; fi
 
-.PHONY: clean
+.PHONY: install-clean
 install-clean: env # Clean the installation files
 	if [ "${INSTALL_DIR}" != "" ]; then rm -rf ${INSTALL_DIR}/; fi
+
+.PHONY: deps-clean
+deps-clean: env # Clean the dependencies files
+	if [ "${DEPS_SOURCE_DIR}" != "" ]; then rm -rf ${DEPS_SOURCE_DIR}/; fi
 
 .PHONY: distclean
 distclean: env # Clean config files
@@ -70,11 +80,11 @@ ${IMG_TMP_MOUNT}:
 
 .PHONY: image
 image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
+	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
+	sync
 	${DEPS_INSTALL_DIR}/bin/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} ${IMG_SIZE}
 	sudo mkfs.${IMG_FS} ${INSTALL_DIR}/${IMG_NAME}
 	@echo -e "#\n# * Sudo in needed to mount the installation image to make modifiations\n#\n"
-	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
-	sync
 	@echo -e "#\n# * If you get error \"Structure needs cleaning\", just try again\n#"
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
 	sudo ${DEPS_INSTALL_DIR}/bin/debootstrap --arch ${ARCH_DEBOOTSTRAP} --include=${IMG_PACKAGES} stable ${IMG_TMP_MOUNT} https://deb.debian.org/debian
@@ -140,13 +150,19 @@ git-pull: env # Git pull
 # - qemu
 # - debootstrap
 
+# Only populate the list if BUILD_DEPS is true
+ifeq (${BUILD_DEPS},true)
+    DEPS_LIST := deps-gcc deps-binutils deps-qemu deps-debootstrap env
+else
+    DEPS_LIST :=
+endif
 
 ${DEPS_INSTALL_DIR}:
 	mkdir -p ${DEPS_INSTALL_DIR}
 	mkdir -p ${DEPS_INSTALL_DIR}/${TARGET_ARCH}
 	echo "*" > ${DEPS_INSTALL_DIR}/.gitignore
 
-deps: deps-gcc deps-binutils deps-qemu deps-debootstrap env ## Download and build dependencies
+deps: ${DEPS_LIST} ## Download and build dependencies
 
 ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}:
 	mkdir -p ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
@@ -163,28 +179,13 @@ ifneq (${KERNEL_SOURCE_HTTP},"")
 else ifneq (${KERNEL_SOURCE_GIT},"")
 	git clone ${KERNEL_SOURCE_GIT} ${SOURCE_DIR}
 else
-	@echo "Neither KERNEL_SOURCE_HTTP nor KERNEL_SOURCE_GIT were specified"
+	${error "Neither KERNEL_SOURCE_HTTP nor KERNEL_SOURCE_GIT were specified"}
 endif
 
 download: ${SOURCE_DIR} # Download kernel sources from HTTP or GIT
 
 
 ## gcc
-
-GCC_BUILD_DIR=${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}/build
-GCC_BUILD_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
-	             --disable-multilib      \
-               --disable-isl           \
-	             --with-system-zlib      \
-	             --enable-default-pie    \
-	             --enable-default-ssp    \
-	             --enable-host-pie       \
-	             --disable-fixincludes   \
-	             --enable-languages=c,m2 \
-	             --with-mpfr             \
-	             --with-mpc              \
-	             --with-gmp              \
-               --target ${ARCH_GCC}
 
 ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}:
 	wget --directory-prefix ${DEPS_SOURCE_DIR}/ https://${GCC_MIRROR}/unix/languages/gcc/releases/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz
@@ -203,20 +204,6 @@ deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INST
 
 ## Binutils
 
-BINUTILS_BUILD_DIR=${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}/build
-BINUTILS_BUILD_FLAGS=--prefix=${DEPS_INSTALL_DIR}/${TARGET_ARCH}\
-                    --sysconfdir=${IMG_DIR}/etc \
-                    --enable-ld=default \
-                    --enable-plugins    \
-                    --enable-shared     \
-                    --disable-werror    \
-                    --enable-64-bit-bfd \
-                    --enable-new-dtags  \
-                    --with-system-zlib  \
-                    --enable-default-hash-style=gnu \
-                    --target=${ARCH_GCC} \
-                    --program-prefix=${ARCH_GCC}-
-
 ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}:
 	wget --directory-prefix ${DEPS_SOURCE_DIR} https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz
 	tar -xf ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
@@ -232,16 +219,6 @@ deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BU
 
 
 ## Qemu
-
-QEMU_BUILD_DIR=${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}/build
-QEMU_BUILD_FLAGS?=--prefix=${DEPS_INSTALL_DIR} \
-                  --sysconfdir=/etc           \
-                  --localstatedir=/var        \
-                  --target-list=${ARCH_QEMU}-softmmu  \
-                  --enable-${QEMU_DISPLAY_BACKEND} \
-                  --audio-drv-list=default    \
-                  --disable-pa                \
-                  --enable-slirp
 
 ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}:
 	wget --directory-prefix ${DEPS_SOURCE_DIR} https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz
@@ -304,7 +281,7 @@ source-dir: # Output the kernel source directory
 .PHONY: settings
 # When you add a new config variable, add an entry here
 settings: # Shows value of variables
-	@echo "# build -----------------------------------------------#"
+	@echo "\n# build"
 	@echo ENV=${ENV}
 	@echo ENVIRONMENT_DIR=${ENVIRONMENT_DIR}
 	@echo BUILD_ARCH=${BUILD_ARCH}
@@ -317,7 +294,7 @@ settings: # Shows value of variables
 	@echo NPROC=${NPROC}
 	@echo MAKE_FLAGS=\"${MAKE_FLAGS}\"
 	@echo KERNEL_FLAGS=\"${KERNEL_FLAGS}\"
-	@echo "# directories -----------------------------------------#"
+	@echo "\n# directories"
 	@echo WORKTREE=${WORKTREE}
 	@echo KERNEL_SOURCE=${KERNEL_SOURCE}
 	@echo SOURCE_DIR=${SOURCE_DIR}
@@ -326,7 +303,7 @@ settings: # Shows value of variables
 	@echo CONFIG_NAME=${CONFIG_NAME}
 	@echo DEPS_SOURCE_DIR=${DEPS_SOURCE_DIR}
 	@echo DEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}
-	@echo "# rootfs image ----------------------------------------#"
+	@echo "\n# rootfs image"
 	@echo IMG_NAME=${IMG_NAME}
 	@echo IMG_DIR=${IMG_DIR}
 	@echo IMG_TMP_MOUNT=${IMG_TMP_MOUNT}
@@ -335,13 +312,20 @@ settings: # Shows value of variables
 	@echo IMG_USER=${IMG_USER}
 	@echo IMG_PASSWD=${IMG_PASSWD}
 	@echo IMG_SIZE=${IMG_SIZE}
-	@echo "# dependencies ----------------------------------------#"
+	@echo "\n# dependencies"
+	@echo BUILD_DEPS=${BUILD_DEPS}
+	@echo BIN_DIR=${BIN_DIR}
 	@echo GCC_VERSION=${GCC_VERSION}
 	@echo GCC_MIRROR=${GCC_MIRROR}
+	@echo GCC_BUILD_DIR=${GCC_BUILD_DIR}
+	@echo GCC_BUILD_FLAGS=${GCC_BUILD_FLAGS}
 	@echo BINUTILS_VERSION=${BINUTILS_VERSION}
-	@echo CC_DIR=${CC_DIR}
+	@echo BINUTILS_BUILD_DIR=${BINUTILS_BUILD_DIR}
+	@echo BINUTILS_BUILD_FLAGS=${BINUTILS_BUILD_FLAGS}
 	@echo DEBOOTSTRAP_VERSION=${DEBOOTSTRAP_VERSION}
 	@echo QEMU_VERSION=${QEMU_VERSION}
+	@echo QEMU_BUILD_DIR=${QEMU_BUILD_DIR}
+	@echo QEMU_BUILD_FLAGS=${QEMU_BUILD_FLAGS}
 	@echo QEMU_SSH_PORT=${QEMU_SSH_PORT}
 	@echo QEMU_MEM=${QEMU_MEM}
 	@echo QEMU_SOCKETS=${QEMU_SOCKETS}
@@ -358,11 +342,6 @@ help: # Shows help
 	@echo
 	@echo "make targets:"
 	@echo
-	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile kernel-module/Makefile | column -t -l 2 | sort
-
-# Imports
-
-include conf.make
-include kernel-module/Makefile
+	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile ${KERNEL_MODULE_DIR}/Makefile | column -t -l 2 | sort
 
 # End --------------------------------------------------------------
