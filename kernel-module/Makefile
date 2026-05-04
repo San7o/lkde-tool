@@ -30,3 +30,4 @@ module-copy: module # Copy the kernel module in the image
 	sudo cp $(patsubst %.o, %.ko, ${MODULE_DIR}/${obj-m}) ${IMG_TMP_MOUNT}/root
 	sudo umount -R ${IMG_TMP_MOUNT}
 	rmdir ${IMG_TMP_MOUNT}
+	sync

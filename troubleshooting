@@ -1,10 +1,11 @@
-#+startup: content indent
-
-* Troubleshooting
+Troubleshooting
+===============
 
 Here is a list of common problems I encountered and solved.
 
-** Qemu stuck at "booting from rom"
+
+Qemu stuck at "booting from rom"
+--------------------------------
 
 If you compiled Linux with the tinyconfig than this would not boot
 for a number of reasons, probably 64 bit is not supported, nor the
