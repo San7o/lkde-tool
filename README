@@ -29,11 +29,10 @@ and the other with ease.
 Run `make settings` to inspect the current settings of your
 environment.
 
-You may define an environment by creating a file named `.env-NAME` in
-the `environments` directory, where `NAME` represents the name of your
-environment:
+You may define an environment by creating a file named `.env-NAME`,
+where `NAME` represents the name of your environment:
 
-    touch environments/.env-bpf-next
+    touch .env-bpf-next
     echo TARGET_ARCH=x86_64 >> .env-bpf-next  # Add variables as you need
 
 Select your working environment by setting the `ENV` variable:
@@ -63,9 +62,9 @@ while honoring your environment settings. Run `make help` to get a
 list of commands.
 
 LKDE should download and compile all the dependencies you need to work
-with the linux kernel (cross-compilers, qemu...). The only
-requirements to use LKDE are gcc + binutils, wget and the standard
-UNIX tools.
+with the linux kernel (cross-compilers, qemu...). You can also save
+time by using your own binaries (such as from your packet manager) by
+setting the variable BUILD_DEPS=false.
 
 
 lkde.sh
@@ -138,7 +137,7 @@ We will now setup LKDE for working with linux 6.16. Let's first create
 a new environment called `linux-6.16`, by default environments go in
 the `environments` directory:
 
-    touch environments/.env-linux-6.16
+    touch .env-linux-6.16
     export ENV=linux-6.16
 
 If we want to use LKDE to download the sources, we need to set either
