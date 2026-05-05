@@ -1,0 +1,7 @@
+cli
+===
+
+Command line interface for the kernel module.
+
+    make cli
+    make cli-copy

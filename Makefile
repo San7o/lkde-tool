@@ -10,6 +10,7 @@
 
 include conf.make
 include ${KERNEL_MODULE_DIR}/Makefile
+include ${CLI_DIR}/Makefile
 
 #
 # Commands
@@ -342,6 +343,6 @@ help: # Shows help
 	@echo
 	@echo "make targets:"
 	@echo
-	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile ${KERNEL_MODULE_DIR}/Makefile | column -t -l 2 | sort
+	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile ${KERNEL_MODULE_DIR}/Makefile ${CLI_DIR}/Makefile | column -t -l 2 | sort
 
 # End --------------------------------------------------------------

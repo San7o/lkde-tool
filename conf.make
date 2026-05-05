@@ -148,6 +148,7 @@ KERNEL_SOURCE_GIT?= #https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/li
 
 # Kernel
 KERNEL_MODULE_DIR?=kernel-module
+CLI_DIR?=cli
 # Name of the kernel image
 KERNEL_NAME?=kernel-${ENV}-${TARGET_ARCH}
 # Number of processing units to use
