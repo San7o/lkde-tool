@@ -29,17 +29,12 @@ extern "C" {
  * Edu
  */
 
-const EDU_DRIVER_FILE: &str = "/dev/edu_driver";
+const EDU_DRIVER_FILE: &str = "/dev/my_driver";
 
 #[repr(u64)]
 #[derive(Debug)]
 enum Command {
     Check    = 0x01,
-    Id       = 0x02,
-    Int      = 0x03,
-    Fact     = 0x04,
-    DmaRead  = 0x05,
-    DmaWrite = 0x06,
 }
 
 struct Args {
@@ -59,11 +54,6 @@ impl Args {
         
         let command = match args[1].as_str() {
             "check" => Command::Check,
-            "id"    => Command::Id,
-            "int"   => Command::Int,
-            "fact"  => Command::Fact,
-            "write" => Command::DmaWrite,
-            "read"  => Command::DmaRead,
             "help"  => { print_usage(name); process::exit(0); }
             _       => return Err(format!("Unknown command: {}", args[1]).into()),
         };
@@ -80,11 +70,6 @@ fn print_usage(name: &str) {
     println!("");
     println!("Available commands:");
     println!("   check       check if device is ok");
-    println!("   id          get the id of the device");
-    println!("   int         trigger an interrupt request");
-    println!("   fact x      compute the factorial of x");
-    println!("   write str   performa DMA write");
-    println!("   read        read DMA");
     println!("   help        show this message and exit");
 }
 
