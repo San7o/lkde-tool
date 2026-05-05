@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 /*
- * edu-cli utility
+ * cli utility
  *
  * Author:  Giovanni Santini
  * Mail:    giovanni.santini@proton.me
@@ -29,7 +29,7 @@ extern "C" {
  * Edu
  */
 
-const EDU_DRIVER_FILE: &str = "/dev/my_driver";
+const DRIVER_FILE: &str = "/dev/my_driver";
 
 #[repr(u64)]
 #[derive(Debug)]
@@ -90,7 +90,7 @@ fn main() {
 fn run(args: Args) -> Result<(), Box<dyn Error>> {
     println!("[info] Command {:?}, val {:?}", args.command, args.val);
     
-    let filename = CString::new(EDU_DRIVER_FILE).unwrap();
+    let filename = CString::new(DRIVER_FILE).unwrap();
     unsafe {
         let fd = open(filename.as_ptr(), O_RDONLY);
         if fd < 0 {
