@@ -128,7 +128,7 @@ QEMU_SOCKETS?=4
 # Display backend used by qemu
 QEMU_DISPLAY_BACKEND?=gtk
 # Qemu flags
-QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw"\
+QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw nokaslr"\
             --enable-kvm\
             -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0\
             -nic user,hostfwd=tcp::${QEMU_SSH_PORT}-:22 \

@@ -40,6 +40,28 @@ menuconfig: ${CONFIG_DIR} env # Run menuconfig
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} menuconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
+gdbconfig: ${CONFIG_DIR} ## Add gdb support to config
+	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_GDB_SCRIPTS
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_DEBUG_INFO
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --disable CONFIG_DEBUG_INFO_REDUCED
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_FRAME_POINTER
+	make -C ${SOURCE_DIR} olddefconfig
+	make -C ${SOURCE_DIR} scripts_gdb
+	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
+
+kdumpconfig: ${CONFIG_DIR} ## Add kdump support to config
+	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_CRASH_DUMP
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_DEBUG_INFO
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_KEXEC
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_RELOCATABLE
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_MAGIC_SYSRQ
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_PROC_VMCORE
+	make -C ${SOURCE_DIR}/ olddefconfig
+	cp ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
+
 ${CONFIG_DIR}/${CONFIG_NAME}: ${CONFIG_DIR}
 	touch ${CONFIG_DIR}/${CONFIG_NAME}
 
@@ -114,6 +136,9 @@ ${INSTALL_DIR}:
 .PHONY: qemu
 qemu: env # Run qemu
 	${DEPS_INSTALL_DIR}/bin/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide ${QEMU_FLAGS}
+
+qemu-gdb: env # Run qemu and wait for gdb
+	${DEPS_INSTALL_DIR}/bin/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide -s -S ${QEMU_FLAGS}
 
 
 # Some git wrappers
@@ -263,6 +288,7 @@ deps-ubuntu: env ## Install build dependencies in ubuntu
 full: env ## Download and Build the dependencies, kernel and image
 	make download ENV=${ENV}
 	make deps ENV=${ENV}
+	make defconfig ENV=${ENV}
 	make build ENV=${ENV}
 	make install ENV=${ENV}
 	make image ENV=${ENV}
@@ -278,6 +304,10 @@ env: # Print the ENV value
 # the sources
 source-dir: # Output the kernel source directory
 	@echo ${SOURCE_DIR}
+
+.PHONY: gdb
+gdb: # Run gdb and load symbols
+	gdb ${SOURCE_DIR}/vmlinux.unstripped
 
 .PHONY: settings
 # When you add a new config variable, add an entry here
@@ -315,7 +345,6 @@ settings: # Shows value of variables
 	@echo IMG_SIZE=${IMG_SIZE}
 	@echo "\n# dependencies"
 	@echo BUILD_DEPS=${BUILD_DEPS}
-	@echo BIN_DIR=${BIN_DIR}
 	@echo GCC_VERSION=${GCC_VERSION}
 	@echo GCC_MIRROR=${GCC_MIRROR}
 	@echo GCC_BUILD_DIR=${GCC_BUILD_DIR}
