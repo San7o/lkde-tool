@@ -312,7 +312,7 @@ gdb: ## Run gdb and load symbols
 .PHONY: settings
 # When you add a new config variable, add an entry here
 settings: ## Shows value of variables
-	@echo "\n# build"
+	@echo -e "\n# build"
 	@echo ENV=${ENV}
 	@echo ENVIRONMENT_DIR=${ENVIRONMENT_DIR}
 	@echo BUILD_ARCH=${BUILD_ARCH}
@@ -325,7 +325,7 @@ settings: ## Shows value of variables
 	@echo NPROC=${NPROC}
 	@echo MAKE_FLAGS=\"${MAKE_FLAGS}\"
 	@echo KERNEL_FLAGS=\"${KERNEL_FLAGS}\"
-	@echo "\n# directories"
+	@echo -e "\n# directories"
 	@echo WORKTREE=${WORKTREE}
 	@echo KERNEL_SOURCE=${KERNEL_SOURCE}
 	@echo SOURCE_DIR=${SOURCE_DIR}
@@ -334,7 +334,7 @@ settings: ## Shows value of variables
 	@echo CONFIG_NAME=${CONFIG_NAME}
 	@echo DEPS_SOURCE_DIR=${DEPS_SOURCE_DIR}
 	@echo DEPS_INSTALL_DIR=${DEPS_INSTALL_DIR}
-	@echo "\n# rootfs image"
+	@echo -e "\n# rootfs image"
 	@echo IMG_NAME=${IMG_NAME}
 	@echo IMG_DIR=${IMG_DIR}
 	@echo IMG_TMP_MOUNT=${IMG_TMP_MOUNT}
@@ -343,7 +343,7 @@ settings: ## Shows value of variables
 	@echo IMG_USER=${IMG_USER}
 	@echo IMG_PASSWD=${IMG_PASSWD}
 	@echo IMG_SIZE=${IMG_SIZE}
-	@echo "\n# dependencies"
+	@echo -e "\n# dependencies"
 	@echo BUILD_DEPS=${BUILD_DEPS}
 	@echo GCC_VERSION=${GCC_VERSION}
 	@echo GCC_MIRROR=${GCC_MIRROR}
