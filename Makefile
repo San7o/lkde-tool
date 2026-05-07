@@ -268,7 +268,7 @@ ${DEPS_SOURCE_DIR}/debootstrap:
 	tar -xf ${DEPS_SOURCE_DIR}/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
 	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
 
-deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR} ## Download, compile and isntall debootstrap
+deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR} ## Download, compile and install debootstrap
 	ln -s ${DEPS_SOURCE_DIR}/debootstrap/debootstrap ${DEPS_INSTALL_DIR}/bin
 
 
