@@ -18,24 +18,24 @@ include ${CLI_DIR}/Makefile
 all: help
 
 
-# Config dir
+##@ Config
 
 ${CONFIG_DIR}:
 	@mkdir -p ${CONFIG_DIR}
 	@echo "*" > ${CONFIG_DIR}/.gitignore
 
 .PHONY: configure
-defconfig: ${CONFIG_DIR} env # Generate the default .config file
+defconfig: ${CONFIG_DIR} env ## Generate the default .config file
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} defconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: tinyconfig
-tinyconfig: ${CONFIG_DIR} env # Generate the tinyconfig
+tinyconfig: ${CONFIG_DIR} env ## Generate the tinyconfig
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} tinyconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: menuconfig
-menuconfig: ${CONFIG_DIR} env # Run menuconfig
+menuconfig: ${CONFIG_DIR} env ## Run menuconfig
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} menuconfig
 	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
@@ -65,44 +65,44 @@ kdumpconfig: ${CONFIG_DIR} ## Add kdump support to config
 ${CONFIG_DIR}/${CONFIG_NAME}: ${CONFIG_DIR}
 	touch ${CONFIG_DIR}/${CONFIG_NAME}
 
-# Building
+##@ Building
 
 .PHONY: build
-build: env ${CONFIG_DIR}/${CONFIG_NAME} # Build the kernel
+build: env ${CONFIG_DIR}/${CONFIG_NAME} ## Build the kernel
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} KVERSION=${KERNEL_MAJOR}.${KERNEL_MINOR}.${KERNEL_PATCH} ${MAKE_FLAGS}
 
 .PHONY: install
-install: env ${INSTALL_DIR} # Copy the image to the install directory
+install: env ${INSTALL_DIR} ## Copy the image to the install directory
 	cp ${SOURCE_DIR}/arch/${ARCH_LINUX_BUILD_NAME}/boot/bzImage ${INSTALL_DIR}/${KERNEL_NAME}
 
 .PHONY: clean
-clean: install-clean env # Clean the build and installation files
+clean: install-clean env ## Clean the build and installation files
 	make -C ${SOURCE_DIR} clean || :
 	if [ -d ${IMG_TMP_MOUNT} ]; then rm -r ${IMG_TMP_MOUNT}; fi
 
 .PHONY: install-clean
-install-clean: env # Clean the installation files
+install-clean: env ## Clean the installation files
 	if [ "${INSTALL_DIR}" != "" ]; then rm -rf ${INSTALL_DIR}/; fi
 
 .PHONY: deps-clean
-deps-clean: env # Clean the dependencies files
+deps-clean: env ## Clean the dependencies files
 	if [ "${DEPS_SOURCE_DIR}" != "" ]; then rm -rf ${DEPS_SOURCE_DIR}/; fi
 
 .PHONY: distclean
-distclean: env # Clean config files
+distclean: env ## Clean config files
 	make -C ${SOURCE_DIR} distclean
 	rm ${CONFIG_DIR}/${CONFIG_NAME}
 
 
-# Image
+##@ Image
 
 .PHONY: ${IMG_TMP_MOUNT}
 ${IMG_TMP_MOUNT}:
 	mkdir -p ${IMG_TMP_MOUNT}
 
 .PHONY: image
-image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
+image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} ## Create the image
 	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
 	sync
 	${DEPS_INSTALL_DIR}/bin/qemu-img create  ${INSTALL_DIR}/${IMG_NAME} ${IMG_SIZE}
@@ -122,11 +122,11 @@ image: env ${INSTALL_DIR} ${IMG_TMP_MOUNT} # Create the image
 	sudo umount -R ${IMG_TMP_MOUNT}
 
 .PHONY: mount
-mount: env # Mount the image
+mount: env ## Mount the image
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
 
 .PHONY: umount
-umount: env # Unmount the image
+umount: env ## Unmount the image
 	sudo umount -R ${IMG_TMP_MOUNT}
 
 .PHONY: ${INSTALL_DIR}
@@ -134,41 +134,41 @@ ${INSTALL_DIR}:
 	mkdir -p ${INSTALL_DIR}
 
 .PHONY: qemu
-qemu: env # Run qemu
+qemu: env ## Run qemu
 	${DEPS_INSTALL_DIR}/bin/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide ${QEMU_FLAGS}
 
-qemu-gdb: env # Run qemu and wait for gdb
+qemu-gdb: env ## Run qemu and wait for gdb
 	${DEPS_INSTALL_DIR}/bin/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide -s -S ${QEMU_FLAGS}
 
 
-# Some git wrappers
+##@ Git wrappers
 
 .PHONY: log
-git-log: env # Git log
+git-log: env ## Git log
 	cd ${SOURCE_DIR} && git log
 
 .PHONY: fetch
-git-fetch: env # Git fetch
+git-fetch: env ## Git fetch
 	cd ${SOURCE_DIR} && git fetch
 
 .PHONY: merge
-git-merge: env # Git merge
+git-merge: env ## Git merge
 	cd ${SOURCE_DIR} && git merge
 
 .PHONY: diff-origin
-git-diff-origin: env # Git diff origin
+git-diff-origin: env ## Git diff origin
 	cd ${SOURCE_DIR} && git diff origin
 
 .PHONY: diff
-git-diff: env # Git diff local
+git-diff: env ## Git diff local
 	cd ${SOURCE_DIR} && git diff
 
 .PHONY: pull
-git-pull: env # Git pull
+git-pull: env ## Git pull
 	cd ${SOURCE_DIR} && git pull
 
 
-# Dependencies
+##@ Dependencies
 #
 # Download, compile and install major dependencies
 # - gcc
@@ -255,7 +255,7 @@ ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}:
 ${QEMU_BUILD_DIR}: ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}
 	mkdir -p ${QEMU_BUILD_DIR}
 
-deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_INSTALL_DIR}
+deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install qemu
 	cd ${QEMU_BUILD_DIR} && ../configure ${QEMU_BUILD_FLAGS}
 	cd ${QEMU_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${QEMU_BUILD_DIR} && make install
@@ -268,7 +268,7 @@ ${DEPS_SOURCE_DIR}/debootstrap:
 	tar -xf ${DEPS_SOURCE_DIR}/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
 	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
 
-deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR}
+deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR} ## Download, compile and isntall debootstrap
 	ln -s ${DEPS_SOURCE_DIR}/debootstrap/debootstrap ${DEPS_INSTALL_DIR}/bin
 
 
@@ -282,10 +282,10 @@ deps-ubuntu: env ## Install build dependencies in ubuntu
 	sudo apt install -y ${DEPS_EXTERNAL_UBUNTU}
 
 
-# Misc
+##@ Misc
 
 .PHONY: full
-full: env ## Download and Build the dependencies, kernel and image
+full: env ## Download and build the dependencies, kernel and image
 	make download ENV=${ENV}
 	make deps ENV=${ENV}
 	make defconfig ENV=${ENV}
@@ -296,22 +296,22 @@ full: env ## Download and Build the dependencies, kernel and image
 .PHONY: env
 # This is a dependency for most of the other commands so the user will
 # always be informed on which env is active
-env: # Print the ENV value
+env: ## Print the ENV value
 	@echo Using ENV=${ENV}
 
 .PHONY: source-dir
 # This is used by other tools, like emacs, to know where to look for
 # the sources
-source-dir: # Output the kernel source directory
+source-dir: ## Output the kernel source directory
 	@echo ${SOURCE_DIR}
 
 .PHONY: gdb
-gdb: # Run gdb and load symbols
+gdb: ## Run gdb and load symbols
 	gdb ${SOURCE_DIR}/vmlinux.unstripped
 
 .PHONY: settings
 # When you add a new config variable, add an entry here
-settings: # Shows value of variables
+settings: ## Shows value of variables
 	@echo "\n# build"
 	@echo ENV=${ENV}
 	@echo ENVIRONMENT_DIR=${ENVIRONMENT_DIR}
@@ -367,11 +367,16 @@ settings: # Shows value of variables
 	@echo KERNEL_SOURCE_GIT=${KERNEL_SOURCE_GIT}
 
 .PHONY: help
-help: # Shows help
-	@echo "Linux Kernel Development Environment"
-	@echo
-	@echo "make targets:"
-	@echo
-	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile ${KERNEL_MODULE_DIR}/Makefile ${CLI_DIR}/Makefile | column -t -l 2 | sort
+help: ## Display this help.
+	@awk 'BEGIN {FS = ":.*##"; printf "Linux Kernel Development Environment\n\n    make <target>\n\ntargets:\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  %-15s %s\n", $$1, $$2 } /^##@/ { printf "\n%s\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+
+#.PHONY: help
+#help: # Shows help
+#	@echo "Linux Kernel Development Environment"
+#	@echo
+#	@echo "make targets:"
+#	@echo
+#	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile ${KERNEL_MODULE_DIR}/Makefile ${CLI_DIR}/Makefile | column -t -l 2 | sort
 
 # End --------------------------------------------------------------
