@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only OR MIT
-// Author:  Giovanni Santini
-// Mail:    giovanni.santini@proton.me
-// Github:  @San7o
+
+/*
+ * Hello world kernel module
+ *
+ * Author:  Giovanni Santini
+ * Mail:    giovanni.santini@proton.me
+ */
 
 #include <linux/module.h>
 

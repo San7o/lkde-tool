@@ -118,7 +118,7 @@ QEMU_BUILD_FLAGS?=--prefix=${DEPS_INSTALL_DIR} \
                   --disable-pa                \
                   --enable-slirp              \
                   --enable-kvm                \
-                  --enable-sdl
+                   --enable-sdl
 # SSH port for connecting to the virtual machine
 QEMU_SSH_PORT?=2222
 # Virtual Machine memory
@@ -131,9 +131,9 @@ QEMU_DISPLAY_BACKEND?=gtk
 QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw nokaslr"\
             --enable-kvm\
             -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0\
-            -nic user,hostfwd=tcp::${QEMU_SSH_PORT}-:22 \
+            -net user,hostfwd=tcp::${QEMU_SSH_PORT}-:22 \
+            -net nic \
             -m ${QEMU_MEM} \
-            -nic user,model=virtio \
             -smp ${QEMU_SOCKETS}
 
 # Other dependencies needed to build the other dependencies and toolchain

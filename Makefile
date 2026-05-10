@@ -370,13 +370,4 @@ settings: ## Shows value of variables
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "Linux Kernel Development Environment\n\n    make <target>\n\ntargets:\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  %-15s %s\n", $$1, $$2 } /^##@/ { printf "\n%s\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-
-#.PHONY: help
-#help: # Shows help
-#	@echo "Linux Kernel Development Environment"
-#	@echo
-#	@echo "make targets:"
-#	@echo
-#	@sed -e's/^\([^: 	]\+\):.*#\(.*\)$$/\1 \2/p;d' Makefile ${KERNEL_MODULE_DIR}/Makefile ${CLI_DIR}/Makefile | column -t -l 2 | sort
-
 # End --------------------------------------------------------------
