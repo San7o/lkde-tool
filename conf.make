@@ -60,11 +60,13 @@ ARCH_DEBOOTSTRAP?=amd64
 ARCH_LINUX_BUILD_NAME?=x86
 ARCH_QEMU?=x86_64
 ARCH_GCC?=x86_64-pc-linux-gnu
+ARCH_TUXMAKE?=x86_64
 else
 ARCH_DEBOOTSTRAP?=unknown
 ARCH_LINUX_BUILD_NAME?=unknown
 ARCH_QEMU?=unknown
 ARCH_GCC?=unknown
+ARCH_TUXMAKE?=unknown
 endif
 
 # Whether to build the dependencies from source (true / false)
@@ -76,7 +78,7 @@ GCC_MIRROR?=ftp.fu-berlin.de
 GCC_BUILD_DIR?=${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}/build
 GCC_BUILD_FLAGS?=--prefix=${DEPS_INSTALL_DIR} \
 	             --disable-multilib      \
-               --disable-isl           \
+                 --disable-isl           \
 	             --with-system-zlib      \
 	             --enable-default-pie    \
 	             --enable-default-ssp    \
@@ -86,7 +88,7 @@ GCC_BUILD_FLAGS?=--prefix=${DEPS_INSTALL_DIR} \
 	             --with-mpfr             \
 	             --with-mpc              \
 	             --with-gmp              \
-               --target ${ARCH_GCC}
+                 --target ${ARCH_GCC}
 
 # Version of binutils to download
 BINUTILS_VERSION?=2.45
@@ -118,7 +120,7 @@ QEMU_BUILD_FLAGS?=--prefix=${DEPS_INSTALL_DIR} \
                   --disable-pa                \
                   --enable-slirp              \
                   --enable-kvm                \
-                   --enable-sdl
+                  --enable-sdl
 # SSH port for connecting to the virtual machine
 QEMU_SSH_PORT?=2222
 # Virtual Machine memory
@@ -129,7 +131,7 @@ QEMU_SOCKETS?=4
 QEMU_DISPLAY_BACKEND?=gtk
 # Qemu flags
 QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw nokaslr"\
-            --enable-kvm\
+            --enable-kvm \
             -virtfs local,path=${PWD},mount_tag=host0,security_model=passthrough,id=host0\
             -net user,hostfwd=tcp::${QEMU_SSH_PORT}-:22 \
             -net nic \
@@ -147,7 +149,7 @@ KERNEL_SOURCE_GIT?= #https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/li
 
 
 # Kernel
-KERNEL_MODULE_DIR?=kernel-module
+KERNEL_MODULE_DIR?=module
 CLI_DIR?=cli
 # Name of the kernel image
 KERNEL_NAME?=kernel-${ENV}-${TARGET_ARCH}
@@ -178,3 +180,7 @@ IMG_USER?=test
 IMG_PASSWD?=test
 # Size of the root filesystem image
 IMG_SIZE?=10G
+
+## Others -------------------------------------------------------------
+
+

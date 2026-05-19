@@ -1,33 +1,28 @@
 LKDE
 ====
 
-This repository contains the Linux Kernel Development Environment
-(LKDE), an useful tool to develop and test kernel patches and
-applications in multiple kernel branches, trees, architectures and
-configurations.
+This repository contains the Linux Kernel Development Environment (LKDE), an
+useful tool to develop and test kernel patches and applications in multiple
+kernel branches, trees, architectures and configurations.
 
-LKDE is designed to be simple and easy to extend and configure, making
-it both powerful and embeddable. You can integrate LKDE with other
-projects to enhance your development workflow and testing
-infastructure with more control over the operating system's
-configuration.
+LKDE is designed to be simple and easy to extend and configure, making it both
+powerful and embeddable. You can integrate LKDE with other projects to enhance
+your development workflow and testing infastructure with more control over the
+operating system's configuration.
 
 Run `make help` for a list of commands.
-
 
 Environments
 ------------
 
-At the heart of LKDE lies the concept of the `environment`. An
-environment holds all the settings of your development setup, such as
-the target architecture, the compiler version, the source tree,
-etc. Environments allow you to perform the same development workflow
-regardless of the settings: they represent a central place to store
-your development state, enabling you to switch between one environment
-and the other with ease.
+At the heart of LKDE lies the concept of the `environment`. An environment holds
+all the settings of your development setup, such as the target architecture, the
+compiler version, the source tree, etc. Environments allow you to perform the
+same development workflow regardless of the settings: they represent a central
+place to store your development state, enabling you to switch between one
+environment and the other with ease.
 
-Run `make settings` to inspect the current settings of your
-environment.
+Run `make settings` to inspect the current settings of your environment.
 
 You may define an environment by creating a file named `.env-NAME`,
 where `NAME` represents the name of your environment:
@@ -45,46 +40,42 @@ or exporting it:
     # All subsequent commands will use this environment
     make build
 
-You can have any number of environments. Moreover, an environment may
-import another one with the `include` keyword in order to have some
-shared settings between different environments.
-
+You can have any number of environments. Moreover, an environment may import
+another one with the `include` keyword in order to have some shared settings
+between different environments.
 
 Make commands and dependencies
 ------------------------------
 
-Another important idea of LKDE is to provide a full workflow for
-kernel development. Ideally, you would clone this repository and be
-good to go. The setup should be easy, convenient and hackable.
+Another important idea of LKDE is to provide a full workflow for kernel
+development. Ideally, you would clone this repository and be good to go. The
+setup should be easy, convenient and hackable.
 
-This project provides a series of make commands to aid your workflow,
-while honoring your environment settings. Run `make help` to get a
-list of commands.
+This project provides a series of make commands to aid your workflow, while
+honoring your environment settings. Run `make help` to get a list of commands.
 
-LKDE should download and compile all the dependencies you need to work
-with the linux kernel (cross-compilers, qemu...). You can also save
-time by using your own binaries (such as from your packet manager) by
-setting the variable BUILD_DEPS=false.
-
+LKDE should download and compile all the dependencies you need to work with the
+linux kernel (cross-compilers, qemu...). You can also save time by using your
+own binaries (such as from your packet manager) by setting the variable
+BUILD_DEPS=false.
 
 lkde.sh
 -------
 
 To interact with LKDE, you can use the `lkde.sh` script.
 
-This command lets you execute any commands from the root directory of
-LKDE, where you can use all the useful make commands.
+This command lets you execute any commands from the root directory of LKDE,
+where you can use all the useful make commands.
 
-You first need to set the base directory with `set-lkde`, which
-will be set to the current working directory if no other arguments
-are supplied:
+You first need to set the base directory with `set-lkde`, which will be set to
+the current working directory if no other arguments are supplied:
 
     $ lkde.sh set-lkde
     LKDE_DIR set to /home/santo/projects/LKDE. You are in a new shell.
 
-This will also set the script to your path so you can call it from
-anywhere. You can now run any command through the `lkde.sh` script as
-if you were in the LKDE root directory:
+This will also set the script to your path so you can call it from anywhere. You
+can now run any command through the `lkde.sh` script as if you were in the LKDE
+root directory:
 
     $ lkde.sh pwd
     * LKDE_DIR=/home/santo/projects/LKDE
@@ -95,47 +86,40 @@ if you were in the LKDE root directory:
 You can also set the environment with `set-env`, which will simply
 export it.
 
-
 Emacs integration
 -----------------
 
-You can easily use LKDE on Emacs by loading `lkde.el`, which is
-similar to `lkde.sh`.
+You can easily use LKDE on Emacs by loading `lkde.el`, which is similar to
+`lkde.sh`.
 
-You can set the LKDE directory with `M-x lkde-set-base-dir` and the
-environment with `M-x lkde-set-env`. Then you can run `M-x lkde` to
-run a make command, or `M-x lkde-command` to run an interactive
-command with the default directory set to the environment's
-`SOURCE_DIR` (very useful when using magit).
-
+You can set the LKDE directory with `M-x lkde-set-base-dir` and the environment
+with `M-x lkde-set-env`. Then you can run `M-x lkde` to run a make command, or
+`M-x lkde-command` to run an interactive command with the default directory set
+to the environment's `SOURCE_DIR` (very useful when using magit).
 
 Directory Structure
 -------------------
 
-In order to integrate multiple environments, this project defaults to
-a particular directory structure.
+In order to integrate multiple environments, this project defaults to a
+particular directory structure.
 
-In `sources` you should place Linux source trees in subdirectories,
-for example `sources/bpf-next`, `sources/linux-next` or
-`sources/linux-6.16`.  When generating some files like a kernel
-bzImage or a qemu image, the output will be placed in a dedicated
-directory in `install/$ENV-$TARGET_ARCH` which will be created if not
-present. `config/` contains the kernel configuration files, usually
-named `.config-$ENV`. All the content in `image/` will be copied to
-the root filesystem of the image.
+In `sources` you should place Linux source trees in subdirectories, for example
+`sources/bpf-next`, `sources/linux-next` or `sources/linux-6.16`.  When
+generating some files like a kernel bzImage or a qemu image, the output will be
+placed in a dedicated directory in `install/$ENV-$TARGET_ARCH` which will be
+created if not present. `config/` contains the kernel configuration files,
+usually named `.config-$ENV`. All the content in `image/` will be copied to the
+root filesystem of the image.
 
-Since everything is fully customizable, you can choose to structure
-your workflow differently by specifying where things are and where
-things should be, or the naming conventions, though the variables in
-the `.env-NAME` file.
-
+Since everything is fully customizable, you can choose to structure your
+workflow differently by specifying where things are and where things should be,
+or the naming conventions, though the variables in the `.env-NAME` file.
 
 Linux Workflow
 ---------------
 
 We will now setup LKDE for working with linux 6.16. Let's first create
-a new environment called `linux-6.16`, by default environments go in
-the `environments` directory:
+a new environment called `linux-6.16`:
 
     touch .env-linux-6.16
     export ENV=linux-6.16
@@ -146,28 +130,15 @@ If we want to use LKDE to download the sources, we need to set either
     echo KERNEL_SOURCE_HTTP=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz > .env-linux-6.16
 
 We will use the default settings and conventions on x86_64
-(default). Let's download the sources via:
+(default). 
 
-    make download
-
-The sources will be placed in `sources/linux-6.16`.
-
-Next, you should build your tools to work with the target
-architecture, like gcc, binutils and qemu.  You first need some other
-dependencies to build these tools which can be downloaded from your
-distribution: `deps-fedora` and `deps-ubuntu` are already provided, if
-you use another distribution you can find the names of the packages
-yourself. Now you can run `make deps` do download and compile
-everything. The sources will be placed in `deps/` and installed in
-`usr/` or `usr/$TARGET_ARCH`.
-
-- Warning: this compiles gcc and other heavy projects, it may take
-  hours or days to compile. If you are building for the same target
-  architecture as the host one, you can skip this step and set the
-  variables `DEPS_INSTALL_DIR` and `KERNEL_FLAGS` according to your
-  system (assuming you already have the compiled programs somewhere).
+Now its time to download the linux sources and setup the dependencies. You can
+skip the dependencies and use your system ones by setting BUILD_DEPS=false
 
     make deps
+
+The linux sources will be placed in `sources/linux-6.16`, dependencies wources
+will be placed in `deps/` and installed in `install/`
 
 To make a new config file for the kernel build, you have several
 options like:
@@ -176,8 +147,8 @@ options like:
     # or
     make menuconfig
 
-This will create the file `config/.config-linux-6.16` with your
-configuration. You can build the kernel using this configuration with:
+This will create the file `config/.config-linux-6.16` with your configuration.
+You can build the kernel using this configuration with:
 
     make build
 
@@ -185,8 +156,8 @@ And install it in `install/linux-6.16-x86_64`:
 
     make install
 
-To run the kernel you first need an a userspace filesystem, which you
-can setup with:
+To run the kernel you first need an a userspace filesystem, which you can setup
+with:
 
     make image
 
@@ -194,21 +165,19 @@ You can finally boot the image and the built kernel with:
 
     make qemu
 
-From inside the virtual machine, you have access to the project's root
-directory in `/lkde`. This is useful if you want to build and test
-other kernels from an architecture different than your host machine.
+From inside the virtual machine, you have access to the project's root directory
+in `/lkde`. This is useful if you want to build and test other kernels from an
+architecture different than your host machine.
 
-By default, you can also connect to the virtual machine via ssh at
-port 2222:
+By default, you can also connect to the virtual machine via ssh at port 2222:
 
     ssh -p 2222 test@localhost
 
-If you wanted to work on a different tree, say linux-next, or on the
-same tree but with a different architecture, you would only change the
-environment file and use the same exact commands.
+If you wanted to work on a different tree, say linux-next, or on the same tree
+but with a different architecture, you would only change the environment file
+and use the same exact commands.
 
 Happy hacking!
-
 
 License
 -------

@@ -5,17 +5,127 @@
 #
 # --------------------------------------------------------------------
 
+all: help
 
 # Imports
 
 include conf.make
-include ${KERNEL_MODULE_DIR}/Makefile
 include ${CLI_DIR}/Makefile
+include ${KERNEL_MODULE_DIR}/Makefile
 
+##@ Dependencies
 #
-# Commands
-#
-all: help
+# Download, compile and install major dependencies
+# - gcc
+# - binutils
+# - qemu
+# - debootstrap
+
+# Only populate the list if BUILD_DEPS is true
+ifeq (${BUILD_DEPS},true)
+    DEPS_LIST := deps-gcc deps-binutils deps-qemu deps-debootstrap env
+else
+    DEPS_LIST :=
+endif
+DEPS_LIST += deps-linux
+
+${DEPS_INSTALL_DIR}:
+	mkdir -p ${DEPS_INSTALL_DIR}
+	mkdir -p ${DEPS_INSTALL_DIR}/${TARGET_ARCH}
+	echo "*" > ${DEPS_INSTALL_DIR}/.gitignore
+
+deps: ${DEPS_LIST} ## Download and build dependencies
+
+${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}:
+	mkdir -p ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
+	echo "*" > ${DEPS_SOURCE_DIR}/.gitignore
+
+${SOURCE_DIR}: ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
+ifneq (${KERNEL_SOURCE_HTTP},"")
+	wget ${KERNEL_SOURCE_HTTP} -O ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz
+	tar -xf ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz -C ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/ --strip-components 1
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
+	mkdir -p ${SOURCE_DIR}
+	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/* ${SOURCE_DIR} 2>/dev/null || :
+	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/.* ${SOURCE_DIR} 2>/dev/null || :
+else ifneq (${KERNEL_SOURCE_GIT},"")
+	git clone ${KERNEL_SOURCE_GIT} ${SOURCE_DIR}
+else
+	${error "Neither KERNEL_SOURCE_HTTP nor KERNEL_SOURCE_GIT were specified"}
+endif
+
+deps-linux: ${SOURCE_DIR} ## Download kernel sources from HTTP or GIT
+
+
+## gcc
+
+${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}:
+	wget --directory-prefix ${DEPS_SOURCE_DIR}/ https://${GCC_MIRROR}/unix/languages/gcc/releases/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz
+	tar -xf ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}.tar.xz -C ${DEPS_SOURCE_DIR}/
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.xz*
+
+.PHONY: ${GCC_BUILD_DIR}
+${GCC_BUILD_DIR}: ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}
+	mkdir -p ${GCC_BUILD_DIR}
+
+deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install gcc
+	cd ${GCC_BUILD_DIR} && ../configure ${GCC_BUILD_FLAGS}
+	cd ${GCC_BUILD_DIR} && make ${MAKE_FLAGS}
+	cd ${GCC_BUILD_DIR} && make install
+
+
+## Binutils
+
+${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}:
+	wget --directory-prefix ${DEPS_SOURCE_DIR} https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz
+	tar -xf ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
+
+${BINUTILS_BUILD_DIR}: ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}
+	mkdir -p ${BINUTILS_BUILD_DIR}
+
+deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install binutils
+	cd ${BINUTILS_BUILD_DIR} && ../configure ${BINUTILS_BUILD_FLAGS}
+	cd ${BINUTILS_BUILD_DIR} && make ${MAKE_FLAGS}
+	cd ${BINUTILS_BUILD_DIR} && make install
+
+
+## Qemu
+
+${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}:
+	wget --directory-prefix ${DEPS_SOURCE_DIR} https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz
+	tar -xf ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}.tar.xz -C ${DEPS_SOURCE_DIR}/
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.xz*
+
+
+${QEMU_BUILD_DIR}: ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}
+	mkdir -p ${QEMU_BUILD_DIR}
+
+deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install qemu
+	cd ${QEMU_BUILD_DIR} && ../configure ${QEMU_BUILD_FLAGS}
+	cd ${QEMU_BUILD_DIR} && make ${MAKE_FLAGS}
+	cd ${QEMU_BUILD_DIR} && make install
+
+
+## Debootstrap
+
+${DEPS_SOURCE_DIR}/debootstrap:
+	wget --directory-prefix ${DEPS_SOURCE_DIR} http://deb.debian.org/debian/pool/main/d/debootstrap/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz
+	tar -xf ${DEPS_SOURCE_DIR}/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
+	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
+
+deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR} ## Download, compile and install debootstrap
+	ln -s ${DEPS_SOURCE_DIR}/debootstrap/debootstrap ${DEPS_INSTALL_DIR}/bin
+
+
+## External dependencies
+
+.PHONY: deps-fedora
+deps-fedora: env ## Install build dependencies in fedora
+	sudo dnf install -y ${DEPS_EXTERNAL_FEDORA}
+
+deps-ubuntu: env ## Install build dependencies in ubuntu
+	sudo apt install -y ${DEPS_EXTERNAL_UBUNTU}
 
 
 ##@ Config
@@ -62,15 +172,34 @@ kdumpconfig: ${CONFIG_DIR} ## Add kdump support to config
 	make -C ${SOURCE_DIR}/ olddefconfig
 	cp ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
+debugconfig: ${CONFIG_DIR} ## Add sanitization and other debugging options
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_KASAN
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_KASAN_VMALLOC
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_UBSAN
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_DEBUG_VM
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_PROVE_RCU
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_SLUB_DEBUG_ON
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_DEBUG_STACKOVERFLOW
+	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_DETECT_HUNG_TASK
+
+.PHONY: oldconfig
+oldconfig: ## Sync config file with the build
+	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
+	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} KVERSION=${KERNEL_MAJOR}.${KERNEL_MINOR}.${KERNEL_PATCH} ${MAKE_FLAGS} oldconfig
+
 ${CONFIG_DIR}/${CONFIG_NAME}: ${CONFIG_DIR}
 	touch ${CONFIG_DIR}/${CONFIG_NAME}
 
 ##@ Building
 
 .PHONY: build
-build: env ${CONFIG_DIR}/${CONFIG_NAME} ## Build the kernel
-	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
+build: env ${CONFIG_DIR}/${CONFIG_NAME} oldconfig ## Build the kernel
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} KVERSION=${KERNEL_MAJOR}.${KERNEL_MINOR}.${KERNEL_PATCH} ${MAKE_FLAGS}
+
+.PHONY: tuxmake
+tuxmake: env ${CONFIG_DIR}/${CONFIG_NAME} oldconfig ## Build the kernel with tuxmake
+	tuxmake --directory ${SOURCE_DIR} --target-arch=${ARCH_TUXMAKE} --toolchain=gcc-${GCC_VERSION} --kconfig ${CONFIG_DIR}/${CONFIG_NAME} --output-dir /tmp/tux-out --verbose
+	cp /tmp/tux-out/bzImage ${SOURCE_DIR}/arch/${ARCH_LINUX_BUILD_NAME}/boot/
 
 .PHONY: install
 install: env ${INSTALL_DIR} ## Copy the image to the install directory
@@ -168,125 +297,10 @@ git-pull: env ## Git pull
 	cd ${SOURCE_DIR} && git pull
 
 
-##@ Dependencies
-#
-# Download, compile and install major dependencies
-# - gcc
-# - binutils
-# - qemu
-# - debootstrap
-
-# Only populate the list if BUILD_DEPS is true
-ifeq (${BUILD_DEPS},true)
-    DEPS_LIST := deps-gcc deps-binutils deps-qemu deps-debootstrap env
-else
-    DEPS_LIST :=
-endif
-
-${DEPS_INSTALL_DIR}:
-	mkdir -p ${DEPS_INSTALL_DIR}
-	mkdir -p ${DEPS_INSTALL_DIR}/${TARGET_ARCH}
-	echo "*" > ${DEPS_INSTALL_DIR}/.gitignore
-
-deps: ${DEPS_LIST} ## Download and build dependencies
-
-${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}:
-	mkdir -p ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
-	echo "*" > ${DEPS_SOURCE_DIR}/.gitignore
-
-${SOURCE_DIR}: ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
-ifneq (${KERNEL_SOURCE_HTTP},"")
-	wget ${KERNEL_SOURCE_HTTP} -O ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz
-	tar -xf ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz -C ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/ --strip-components 1
-	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
-	mkdir -p ${SOURCE_DIR}
-	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/* ${SOURCE_DIR} 2>/dev/null || :
-	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/.* ${SOURCE_DIR} 2>/dev/null || :
-else ifneq (${KERNEL_SOURCE_GIT},"")
-	git clone ${KERNEL_SOURCE_GIT} ${SOURCE_DIR}
-else
-	${error "Neither KERNEL_SOURCE_HTTP nor KERNEL_SOURCE_GIT were specified"}
-endif
-
-download: ${SOURCE_DIR} # Download kernel sources from HTTP or GIT
-
-
-## gcc
-
-${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}:
-	wget --directory-prefix ${DEPS_SOURCE_DIR}/ https://${GCC_MIRROR}/unix/languages/gcc/releases/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz
-	tar -xf ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}.tar.xz -C ${DEPS_SOURCE_DIR}/
-	rm -rf ${DEPS_SOURCE_DIR}/*.tar.xz*
-
-.PHONY: ${GCC_BUILD_DIR}
-${GCC_BUILD_DIR}: ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}
-	mkdir -p ${GCC_BUILD_DIR}
-
-deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install gcc
-	cd ${GCC_BUILD_DIR} && ../configure ${GCC_BUILD_FLAGS}
-	cd ${GCC_BUILD_DIR} && make ${MAKE_FLAGS}
-	cd ${GCC_BUILD_DIR} && make install
-
-
-## Binutils
-
-${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}:
-	wget --directory-prefix ${DEPS_SOURCE_DIR} https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz
-	tar -xf ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
-	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
-
-${BINUTILS_BUILD_DIR}: ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}
-	mkdir -p ${BINUTILS_BUILD_DIR}
-
-deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install binutils
-	cd ${BINUTILS_BUILD_DIR} && ../configure ${BINUTILS_BUILD_FLAGS}
-	cd ${BINUTILS_BUILD_DIR} && make ${MAKE_FLAGS}
-	cd ${BINUTILS_BUILD_DIR} && make install
-
-
-## Qemu
-
-${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}:
-	wget --directory-prefix ${DEPS_SOURCE_DIR} https://download.qemu.org/qemu-${QEMU_VERSION}.tar.xz
-	tar -xf ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}.tar.xz -C ${DEPS_SOURCE_DIR}/
-	rm -rf ${DEPS_SOURCE_DIR}/*.tar.xz*
-
-
-${QEMU_BUILD_DIR}: ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION}
-	mkdir -p ${QEMU_BUILD_DIR}
-
-deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_INSTALL_DIR} ## Download, compile and install qemu
-	cd ${QEMU_BUILD_DIR} && ../configure ${QEMU_BUILD_FLAGS}
-	cd ${QEMU_BUILD_DIR} && make ${MAKE_FLAGS}
-	cd ${QEMU_BUILD_DIR} && make install
-
-
-## Debootstrap
-
-${DEPS_SOURCE_DIR}/debootstrap:
-	wget --directory-prefix ${DEPS_SOURCE_DIR} http://deb.debian.org/debian/pool/main/d/debootstrap/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz
-	tar -xf ${DEPS_SOURCE_DIR}/debootstrap_${DEBOOTSTRAP_VERSION}.tar.gz -C ${DEPS_SOURCE_DIR}/
-	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
-
-deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR} ## Download, compile and install debootstrap
-	ln -s ${DEPS_SOURCE_DIR}/debootstrap/debootstrap ${DEPS_INSTALL_DIR}/bin
-
-
-## External dependencies
-
-.PHONY: deps-fedora
-deps-fedora: env ## Install build dependencies in fedora
-	sudo dnf install -y ${DEPS_EXTERNAL_FEDORA}
-
-deps-ubuntu: env ## Install build dependencies in ubuntu
-	sudo apt install -y ${DEPS_EXTERNAL_UBUNTU}
-
-
 ##@ Misc
 
 .PHONY: full
 full: env ## Download and build the dependencies, kernel and image
-	make download ENV=${ENV}
 	make deps ENV=${ENV}
 	make defconfig ENV=${ENV}
 	make build ENV=${ENV}
@@ -368,6 +382,6 @@ settings: ## Shows value of variables
 
 .PHONY: help
 help: ## Display this help.
-	@awk 'BEGIN {FS = ":.*##"; printf "Linux Kernel Development Environment\n\n    make <target>\n\ntargets:\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  %-15s %s\n", $$1, $$2 } /^##@/ { printf "\n%s\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "Linux Kernel Development Environment\n\n    make <target>\n\ntargets:\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  %-15s %s\n", $$1, $$2 } /^##@/ { printf "\n%s\n", substr($$0, 5) } ' ${MAKEFILE_LIST}
 
 # End --------------------------------------------------------------

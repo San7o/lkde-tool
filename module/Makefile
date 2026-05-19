@@ -8,22 +8,29 @@
 #
 
 obj-m      += hello.o
-MODULE_DIR  = ${PWD}/kernel-module
+MODULE_DIR  = ${PWD}/module
 
 #
 # Commands
 #
 
+##@ Module
+
+.PHONY: module-prepare
+module-prepare: oldconfig ## Prepares the kernel to build modules
+	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} ${MAKE_FLAGS} modules_prepare
+	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} ${MAKE_FLAGS} modules
+
 .PHONY: module
-module: # Build the kernel module
+module: oldconfig ## Build the kernel module
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} ${MAKE_FLAGS} M=${MODULE_DIR} modules 
 
 .PHONY: module-clean
-module-clean: # Clean the kernel module
+module-clean: oldconfig ## Clean the kernel module
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} ${MAKE_FLAGS} M=${MODULE_DIR} clean
 
 .PHONY: module-copy
-module-copy: module # Copy the kernel module in the image
+module-copy: module ## Copy the kernel module in the image
 	if mountpoint -q ${IMG_TMP_MOUNT}; then sudo umount -R ${IMG_TMP_MOUNT}; fi
 	mkdir -p ${IMG_TMP_MOUNT}
 	sudo mount -o loop ${INSTALL_DIR}/${IMG_NAME} ${IMG_TMP_MOUNT}
