@@ -54,7 +54,7 @@ else
 	${error "Neither KERNEL_SOURCE_HTTP nor KERNEL_SOURCE_GIT were specified"}
 endif
 
-deps-linux: ${SOURCE_DIR} ## Download kernel sources from HTTP or GIT
+deps-linux: ${SOURCE_DIR} ## Download kernel sources via HTTP or GIT
 
 
 ## gcc
@@ -278,11 +278,7 @@ git-log: env ## Git log
 
 .PHONY: fetch
 git-fetch: env ## Git fetch
-	cd ${SOURCE_DIR} && git fetch
-
-.PHONY: merge
-git-merge: env ## Git merge
-	cd ${SOURCE_DIR} && git merge
+	cd ${SOURCE_DIR} && git fetch --all
 
 .PHONY: diff-origin
 git-diff-origin: env ## Git diff origin
@@ -291,10 +287,6 @@ git-diff-origin: env ## Git diff origin
 .PHONY: diff
 git-diff: env ## Git diff local
 	cd ${SOURCE_DIR} && git diff
-
-.PHONY: pull
-git-pull: env ## Git pull
-	cd ${SOURCE_DIR} && git pull
 
 
 ##@ Misc
