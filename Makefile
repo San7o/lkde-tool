@@ -137,18 +137,18 @@ ${CONFIG_DIR}:
 .PHONY: configure
 defconfig: ${CONFIG_DIR} env ## Generate the default .config file
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} defconfig
-	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
+	cp ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: tinyconfig
 tinyconfig: ${CONFIG_DIR} env ## Generate the tinyconfig
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} tinyconfig
-	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
+	cp ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: menuconfig
 menuconfig: ${CONFIG_DIR} env ## Run menuconfig
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
 	make ${KERNEL_FLAGS} -C ${SOURCE_DIR} menuconfig
-	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
+	cp ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 gdbconfig: ${CONFIG_DIR} ## Add gdb support to config
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
@@ -159,7 +159,7 @@ gdbconfig: ${CONFIG_DIR} ## Add gdb support to config
 	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_FRAME_POINTER
 	make -C ${SOURCE_DIR} olddefconfig
 	make -C ${SOURCE_DIR} scripts_gdb
-	mv ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
+	cp ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 kdumpconfig: ${CONFIG_DIR} ## Add kdump support to config
 	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
@@ -173,6 +173,7 @@ kdumpconfig: ${CONFIG_DIR} ## Add kdump support to config
 	cp ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 debugconfig: ${CONFIG_DIR} ## Add sanitization and other debugging options
+	cp ${CONFIG_DIR}/${CONFIG_NAME} ${SOURCE_DIR}/.config
 	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_KASAN
 	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_KASAN_VMALLOC
 	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_UBSAN
@@ -181,6 +182,7 @@ debugconfig: ${CONFIG_DIR} ## Add sanitization and other debugging options
 	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_SLUB_DEBUG_ON
 	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_DEBUG_STACKOVERFLOW
 	${SOURCE_DIR}/scripts/config --file ${SOURCE_DIR}/.config --enable CONFIG_DETECT_HUNG_TASK
+	cp ${SOURCE_DIR}/.config ${CONFIG_DIR}/${CONFIG_NAME}
 
 .PHONY: oldconfig
 oldconfig: ## Sync config file with the build
