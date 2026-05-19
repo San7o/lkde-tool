@@ -1,9 +1,7 @@
-# --------------------------------------------------------------------
-#
+# ------------------------------------------------------------------
 #  LKDE
 #  by Giovanni Santini | giovanni.santini@proton.me
-#
-# --------------------------------------------------------------------
+# ------------------------------------------------------------------
 
 all: help
 
@@ -118,7 +116,6 @@ ${DEPS_SOURCE_DIR}/debootstrap:
 
 deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR} ## Download, compile and install debootstrap
 	ln -s ${DEPS_SOURCE_DIR}/debootstrap/debootstrap ${DEPS_INSTALL_DIR}/bin
-
 
 ## External dependencies
 #
@@ -240,7 +237,6 @@ distclean: env ## Clean config files
 	make -C ${SOURCE_DIR} distclean
 	rm ${CONFIG_DIR}/${CONFIG_NAME}
 
-
 ##@ Image
 #
 # These commands help you create a bootable image with a default userspace
@@ -293,7 +289,6 @@ qemu: env ## Run qemu
 qemu-gdb: env ## Run qemu and wait for gdb
 	${DEPS_INSTALL_DIR}/bin/qemu-system-${ARCH_QEMU} -kernel ${INSTALL_DIR}/${KERNEL_NAME} -drive format=raw,file=${INSTALL_DIR}/${IMG_NAME},if=ide -s -S ${QEMU_FLAGS}
 
-
 ##@ Git wrappers
 #
 # Some basic git wrappers.
@@ -318,7 +313,6 @@ git-diff-origin: env ## Git diff origin
 .PHONY: diff
 git-diff: env ## Git diff local
 	cd ${SOURCE_DIR} && git diff
-
 
 ##@ Misc
 
