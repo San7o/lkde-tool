@@ -26,4 +26,5 @@ module_init(hello_init);
 module_exit(hello_cleanup);
 
 MODULE_LICENSE("Dual MIT/GPL");
+MODULE_AUTHOR("Giovanni Santini <santigio2003@gmail.com>");
 MODULE_DESCRIPTION("Hello world kernel module");
