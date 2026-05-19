@@ -45,15 +45,15 @@ ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}:
 	echo "*" > ${DEPS_SOURCE_DIR}/.gitignore
 
 ${SOURCE_DIR}: ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}
-ifneq (${KERNEL_SOURCE_HTTP},"")
+ifneq (${KERNEL_SOURCE_GIT},"")
+	git clone ${KERNEL_SOURCE_GIT} ${SOURCE_DIR}
+else ifneq (${KERNEL_SOURCE_HTTP},"")
 	wget ${KERNEL_SOURCE_HTTP} -O ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz
 	tar -xf ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}.tar.gz -C ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/ --strip-components 1
 	rm -rf ${DEPS_SOURCE_DIR}/*.tar.gz*
 	mkdir -p ${SOURCE_DIR}
-	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/* ${SOURCE_DIR} 2>/dev/null || :
-	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/.* ${SOURCE_DIR} 2>/dev/null || :
-else ifneq (${KERNEL_SOURCE_GIT},"")
-	git clone ${KERNEL_SOURCE_GIT} ${SOURCE_DIR}
+	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/* ${SOURCE_DIR} 2>/dev/null || true
+	mv ${DEPS_SOURCE_DIR}/${KERNEL_SOURCE}/.* ${SOURCE_DIR} 2>/dev/null || true
 else
 	${error "Neither KERNEL_SOURCE_HTTP nor KERNEL_SOURCE_GIT were specified"}
 endif
@@ -221,7 +221,7 @@ install: env ${INSTALL_DIR} ## Copy the image to the install directory
 
 .PHONY: clean
 clean: install-clean env ## Clean the build and installation files
-	make -C ${SOURCE_DIR} clean || :
+	make -C ${SOURCE_DIR} clean || true
 	if [ -d ${IMG_TMP_MOUNT} ]; then rm -r ${IMG_TMP_MOUNT}; fi
 
 .PHONY: install-clean
@@ -234,7 +234,7 @@ deps-clean: env ## Clean the dependencies files
 
 .PHONY: distclean
 distclean: env ## Clean config files
-	make -C ${SOURCE_DIR} distclean
+	make -C ${SOURCE_DIR} distclean || true
 	rm ${CONFIG_DIR}/${CONFIG_NAME}
 
 ##@ Image

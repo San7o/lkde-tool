@@ -107,13 +107,13 @@ environment called "linux-6.16", for a quick start it will include the
 linux-nodeps environment which does not build the dependencies (like gcc,
 qemu...) saving us a lot of time:
 
-    echo "include .env-linux-nodeps" >> .env-linux-6.16
+    echo "include .env-linux-nodeps" > .env-linux-6.16
     export ENV=linux-6.16
 
 If we want to use LKDE to download the sources, we need to set either
 "KERNEL_SOURCE_HTTP" or "KERNEL_SOURCE_GIT" in the environment:
 
-    echo KERNEL_SOURCE_HTTP=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz > .env-linux-6.16
+    echo KERNEL_SOURCE_HTTP=https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.16.tar.gz >> .env-linux-6.16
 
 We will use the default settings and conventions on x86_64
 (default). 
@@ -169,8 +169,12 @@ In the previous section we have seen how to build and boot a simple linux kernel
 and image. LKDE expands this workflow with many useful commands. Run "make help"
 for a full list, we will see a small selection now.
 
-It usually happens that you need to enable some flags for debugging or for
-sanitization. This can be done with various *config commands like:
+To run all the previous commands with a single one:
+
+    make full
+
+It usually happens that you need to enable always the same flags for debugging
+or for sanitization. This can be done with various *config commands like:
 
     make gdbconfig        # Add gdb support to config
     make kdumpconfig      # Add kdump support to config
@@ -201,7 +205,7 @@ it with:
     male umount           # Unmount the image
 
 The contents under the image/ directory are automatically copied inside the
-image so you can easily setup what is inside the image.
+image so you can easily setup the ocntents of the image.
 
 Arguably the most powerful thing about LKDE is the fact that it is really
 simple. It is essentially just a Makefile, which you can extend and modify it
