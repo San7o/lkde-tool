@@ -2,8 +2,8 @@ LKDE
 ====
 
 The Linux Kernel Development Environment (LKDE) tool provides a convenient
-workflow for Linux kernel developers. It helps you download and build the linux
-Kernel (similarly to buildroot, without depending on it), providing fine grained
+workflow for Linux kernel developers. It helps you download and build the Linux
+kernel (similarly to buildroot, without depending on it), providing fine grained
 control over the entire process, a default directory structure, an "environment"
 workflow and lots of handy commands that simplify your job.
 

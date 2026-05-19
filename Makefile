@@ -15,11 +15,17 @@ include ${KERNEL_MODULE_DIR}/Makefile
 
 ##@ Dependencies
 #
-# Download, compile and install major dependencies
+# You can download, compile and install major dependencies.
+#
+# Set BUILD_DEPS=false to skip this and download only the Linux kernel.
+# 
+# LKDE supports the following dependencies:
+#
 # - gcc
 # - binutils
 # - qemu
 # - debootstrap
+# 
 
 # Only populate the list if BUILD_DEPS is true
 ifeq (${BUILD_DEPS},true)
@@ -56,7 +62,6 @@ endif
 
 deps-linux: ${SOURCE_DIR} ## Download kernel sources via HTTP or GIT
 
-
 ## gcc
 
 ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION}:
@@ -73,7 +78,6 @@ deps-gcc: env ${DEPS_SOURCE_DIR}/gcc-${GCC_VERSION} ${GCC_BUILD_DIR} ${DEPS_INST
 	cd ${GCC_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${GCC_BUILD_DIR} && make install
 
-
 ## Binutils
 
 ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION}:
@@ -88,7 +92,6 @@ deps-binutils: env ${DEPS_SOURCE_DIR}/binutils-${BINUTILS_VERSION} ${BINUTILS_BU
 	cd ${BINUTILS_BUILD_DIR} && ../configure ${BINUTILS_BUILD_FLAGS}
 	cd ${BINUTILS_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${BINUTILS_BUILD_DIR} && make install
-
 
 ## Qemu
 
@@ -106,7 +109,6 @@ deps-qemu: env ${DEPS_SOURCE_DIR}/qemu-${QEMU_VERSION} ${QEMU_BUILD_DIR} ${DEPS_
 	cd ${QEMU_BUILD_DIR} && make ${MAKE_FLAGS}
 	cd ${QEMU_BUILD_DIR} && make install
 
-
 ## Debootstrap
 
 ${DEPS_SOURCE_DIR}/debootstrap:
@@ -119,6 +121,8 @@ deps-debootstrap: ${DEPS_SOURCE_DIR}/debootstrap ${DEPS_INSTALL_DIR} ## Download
 
 
 ## External dependencies
+#
+# These are the dependencies needed to build the previous dependencies
 
 .PHONY: deps-fedora
 deps-fedora: env ## Install build dependencies in fedora
@@ -127,8 +131,16 @@ deps-fedora: env ## Install build dependencies in fedora
 deps-ubuntu: env ## Install build dependencies in ubuntu
 	sudo apt install -y ${DEPS_EXTERNAL_UBUNTU}
 
-
 ##@ Config
+#
+# These commands are used to modify the Linux build configurations.
+#
+# Some commands map to linux directly, like "menuconfig" where LKDE simply
+# wraps them and with the environment support.
+#
+# Other commands are added for convenience, like gdbconfig which enables
+# some configuration flags needed to use GDB with the kernel
+#
 
 ${CONFIG_DIR}:
 	@mkdir -p ${CONFIG_DIR}
@@ -193,6 +205,9 @@ ${CONFIG_DIR}/${CONFIG_NAME}: ${CONFIG_DIR}
 	touch ${CONFIG_DIR}/${CONFIG_NAME}
 
 ##@ Building
+#
+# Commands so build, install and clean Linux
+#
 
 .PHONY: build
 build: env ${CONFIG_DIR}/${CONFIG_NAME} oldconfig ## Build the kernel
@@ -227,6 +242,13 @@ distclean: env ## Clean config files
 
 
 ##@ Image
+#
+# These commands help you create a bootable image with a default userspace
+# which you can configure.
+#
+# The files under image/ are copied in the root directory, so you can add
+# configurations files like /etc/hostname there.
+#
 
 .PHONY: ${IMG_TMP_MOUNT}
 ${IMG_TMP_MOUNT}:
@@ -273,6 +295,13 @@ qemu-gdb: env ## Run qemu and wait for gdb
 
 
 ##@ Git wrappers
+#
+# Some basic git wrappers.
+#
+# For advanced git usage, you can always go directly under source/ to your Linux
+# tree. LKDE is just a light wrapper after all, so you can easily dig
+# underneath.
+#
 
 .PHONY: log
 git-log: env ## Git log

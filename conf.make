@@ -136,7 +136,8 @@ QEMU_FLAGS?=-append "root=/dev/sda console=ttyS0 rw nokaslr"\
             -net user,hostfwd=tcp::${QEMU_SSH_PORT}-:22 \
             -net nic \
             -m ${QEMU_MEM} \
-            -smp ${QEMU_SOCKETS}
+            -smp ${QEMU_SOCKETS} \
+            -nographic
 
 # Other dependencies needed to build the other dependencies and toolchain
 DEPS_EXTERNAL_FEDORA?=libcap-ng-devel wget libgmp-dev libmpfr-dev libmpc-dev zlib1g-dev ninja flex bison gtk3-devel
