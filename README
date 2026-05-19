@@ -102,10 +102,12 @@ though the variables in the ".env-NAME" file.
 Linux Workflow
 ---------------
 
-We will now setup LKDE for working with linux 6.16. Let's first create
-a new environment called "linux-6.16":
+We will now setup LKDE for working with linux 6.16. Let's first create a new
+environment called "linux-6.16", for a quick start it will include the
+linux-nodeps environment which does not build the dependencies (like gcc,
+qemu...) saving us a lot of time:
 
-    touch .env-linux-6.16
+    echo "include .env-linux-nodeps" >> .env-linux-6.16
     export ENV=linux-6.16
 
 If we want to use LKDE to download the sources, we need to set either
@@ -116,13 +118,12 @@ If we want to use LKDE to download the sources, we need to set either
 We will use the default settings and conventions on x86_64
 (default). 
 
-Now its time to download the linux sources and setup the dependencies. You can
-skip the dependencies and use your system ones by setting BUILD_DEPS=false:
+Now its time to download the linux sources:
 
-    make deps BUILD_DEPS=false
+    make deps
 
-The linux sources will be placed in "sources/linux-6.16", dependencies sources
-will be placed in "deps/" and installed in "install/".
+The linux sources will be placed in "sources/linux-6.16", while dependencies
+sources would be placed in "deps/" and installed in "install/".
 
 To make a new config file for the kernel build, you have several
 options like:
@@ -160,6 +161,51 @@ By default, you can also connect to the virtual machine via ssh at port 2222:
 If you wanted to work on a different tree, say linux-next, or on the same tree
 but with a different architecture, you would only change the environment file
 and use the same exact commands.
+
+Advanced Usage
+--------------
+
+In the previous section we have seen how to build and boot a simple linux kernel
+and image. LKDE expands this workflow with many useful commands. Run "make help"
+for a full list, we will see a small selection now.
+
+It usually happens that you need to enable some flags for debugging or for
+sanitization. This can be done with various *config commands like:
+
+    make gdbconfig        # Add gdb support to config
+    make kdumpconfig      # Add kdump support to config
+    make debugconfig      # Add sanitization and other debugging options
+
+If you build your kernel with gdbconfig, you can use gdb when qemu starts. One
+of the most useful commands is:
+
+    make debug
+
+This will create a tmux session with two windows split vertically. One is for
+gdb and the other is for qemu, with gdb already attached to the kernel.
+
+Another handy feature is support for building a module and a cli tool. LKDE
+already sets up everything for you, so you simply can use the commands
+
+    make cli              # Build the cli tool
+    make cli-copy         # Copy the cli tool in the image
+
+    make module-prepare   # Prepares the kernel to build modules
+    make module           # Build the kernel module
+    make module-copy      # Copy the kernel module in the image
+
+If you need to modify the contents for the image, you can mount it and unmount
+it with:
+
+    make mount            # Mount the image
+    male umount           # Unmount the image
+
+The contents under the image/ directory are automatically copied inside the
+image so you can easily setup what is inside the image.
+
+Arguably the most powerful thing about LKDE is the fact that it is really
+simple. It is essentially just a Makefile, which you can extend and modify it
+based on your current needs. Simplicity wins all the time.
 
 Happy hacking!
 
