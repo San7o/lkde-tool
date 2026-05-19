@@ -338,7 +338,15 @@ source-dir: ## Output the kernel source directory
 
 .PHONY: gdb
 gdb: ## Run gdb and load symbols
-	gdb ${SOURCE_DIR}/vmlinux.unstripped
+	gdb ${SOURCE_DIR}/vmlinux.unstripped -ex "target remote :1234"
+
+.PHONY: debug
+debug: ## Start a debug session with tmux
+	tmux new-session -d -s lkde-debug
+	tmux split-window -h -t lkde-debug
+	tmux send-keys -t lkde-debug:1.2 'make qemu-gdb' C-m
+	tmux send-keys -t lkde-debug:1.1 'make gdb' C-m
+	tmux attach-session -t lkde-debug
 
 .PHONY: settings
 # When you add a new config variable, add an entry here
