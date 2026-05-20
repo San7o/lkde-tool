@@ -13,13 +13,13 @@
 
 static int __init hello_init(void)
 {
-  printk(KERN_INFO "hello world!\n");
+  pr_info("hello world!\n");
   return 0;
 }
 
 static void __exit hello_cleanup(void)
 {
-  printk(KERN_INFO "bye world!\n");
+  pr_info("bye world!\n");
 }
 
 module_init(hello_init);
